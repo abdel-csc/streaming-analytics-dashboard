@@ -3,7 +3,8 @@
   "builds": [
     {
       "src": "api/index.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "50mb" }
     },
     {
       "src": "dashboard.html",
@@ -11,13 +12,12 @@
     }
   ],
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "api/index.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "dashboard.html"
+    { "src": "/api/(.*)", "dest": "api/index.py" },
+    { "src": "/(.*)",     "dest": "dashboard.html" }
+  ],
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 30
     }
-  ]
+  }
 }
