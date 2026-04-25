@@ -1,0 +1,7 @@
+# Copy this to .env and fill in your values
+# Never commit .env to git
+
+# SurveyMonkey API (free tier works)
+# Get your token at: https://developer.surveymonkey.com/apps/
+SURVEYMONKEY_TOKEN=your_access_token_here
+SURVEYMONKEY_SURVEY_ID=your_survey_id_here

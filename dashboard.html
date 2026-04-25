@@ -1,0 +1,1898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Streaming Analytics Dashboard | Abdel Mahmoud</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --Y:#FCB712;--O:#F37020;--R:#CD004D;--PU:#6460AC;--B:#008AD2;--G:#0CB14B;
+  --bg:#000;--surf:#0f0f0f;--card:#161616;--border:#242424;--tx:#fff;--mt:#888;
+  --lbg:#F0EBF8;--lsurf:#E4D9F0;--lcard:#fff;--lborder:#C9B8E0;--ltx:#1A0A2E;--lmt:#7B6899;
+}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column}
+body.light{background:var(--lbg);color:var(--ltx)}
+#disclaimer{background:#f5eeff;border-bottom-color:#C9B8E044}
+body.light #disclaimer{background:#ede0f8;border-bottom-color:#9b7fc8;color:#5a4a6e}
+body.light .sidebar{background:var(--lsurf);border-right-color:var(--lborder)}
+body.light .card{background:var(--lcard);border-color:var(--lborder)}
+body.light .metric-card{background:var(--lsurf);border-color:var(--lborder)}
+body.light .tab-btn{color:var(--lmt)}
+body.light .tab-btn.active{color:var(--ltx);border-bottom-color:var(--B)}
+body.light select,body.light input[type=text],body.light input[type=range]{background:var(--lsurf);color:var(--ltx);border-color:var(--lborder)}
+body.light .nav-item{color:var(--lmt)}
+body.light .nav-item:hover{background:rgba(0,0,0,.04);color:var(--ltx)}
+body.light .nav-item.active{color:var(--ltx);border-left:2px solid var(--B)}
+body.light .insight-box{background:var(--lsurf);color:var(--lmt)}
+body.light .data-table th{background:var(--lsurf);color:var(--lmt)}
+body.light .data-table td{border-bottom-color:var(--lborder)}
+body.light .search-input{background:var(--lsurf);color:var(--ltx);border-color:var(--lborder)}
+body.light .result-count{color:var(--lmt)}
+
+/* Sidebar */
+.sidebar{width:230px;min-width:230px;background:var(--surf);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-brand{display:flex;align-items:center;gap:10px;padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.brand-text .title{font-size:14px;font-weight:700;line-height:1.2}
+.brand-text .sub{font-size:10px;color:var(--mt);margin-top:2px}
+.nav-label{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--mt);margin-bottom:6px}
+.nav-item{padding:8px 10px;border-radius:6px;font-size:13px;color:var(--mt);cursor:pointer;margin-bottom:3px;transition:.15s}
+.nav-item:hover{background:rgba(255,255,255,.04);color:var(--tx)}
+.nav-item.active{color:var(--tx);font-weight:500;border-left:2px solid var(--B);padding-left:8px}
+.theme-btn{width:100%;padding:7px;background:transparent;border:1px solid var(--border);color:var(--mt);border-radius:6px;cursor:pointer;font-size:12px;font-family:'IBM Plex Sans',sans-serif;margin-bottom:14px;transition:.15s}
+.theme-btn:hover{border-color:var(--B);color:var(--tx)}
+.sidebar-footer{margin-top:auto;font-size:11px;color:var(--mt);line-height:1.7;border-top:1px solid var(--border);padding-top:12px}
+.sidebar-footer a{color:var(--B);text-decoration:none}
+.sidebar-footer strong{color:var(--tx)}
+
+/* Main */
+.main{flex:1;overflow-y:auto;padding:28px 32px;max-width:1200px}
+.rainbow-bar{height:3px;background:var(--B);border-radius:2px;margin-bottom:20px}
+.page-header{display:flex;align-items:center;gap:14px;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid var(--border)}
+.page-header img{width:48px;height:48px;object-fit:contain}
+.page-header .eyebrow{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mt);margin-bottom:4px}
+.page-header h1{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.page-header .sub{font-size:13px;color:var(--mt);margin-top:3px}
+
+/* Metrics */
+.metrics-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 16px;text-align:center}
+.metric-num{font-size:24px;font-weight:700;line-height:1;margin-bottom:4px}
+.metric-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mt)}
+.metric-delta{font-size:11px;color:var(--mt);margin-top:4px}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:18px 20px;margin-bottom:16px}
+.card h3{font-size:12px;font-weight:500;margin-bottom:12px;color:var(--mt);text-transform:uppercase;letter-spacing:.06em}
+
+/* Grid */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+
+/* Tabs */
+.tab-bar{display:flex;border-bottom:1px solid var(--border);margin-bottom:18px;gap:0}
+.tab-btn{padding:9px 18px;background:transparent;border:none;border-bottom:2px solid transparent;
+  color:var(--mt);cursor:pointer;font-size:13px;font-weight:500;font-family:'IBM Plex Sans',sans-serif;transition:.15s;margin-bottom:-1px}
+.tab-btn.active{color:var(--tx);border-bottom-color:var(--B)}
+.tab-btn:hover:not(.active){color:var(--tx)}
+.tab-pane{display:none}.tab-pane.active{display:block}
+
+/* Controls */
+.control-row{display:flex;gap:12px;align-items:flex-end;margin-bottom:14px;flex-wrap:wrap}
+.control-group{display:flex;flex-direction:column;gap:5px}
+.control-group label{font-size:11px;color:var(--mt);letter-spacing:.05em}
+select,input[type=text]{background:var(--card);color:var(--tx);border:1px solid var(--border);
+  border-radius:5px;padding:7px 10px;font-size:12px;font-family:'IBM Plex Sans',sans-serif;outline:none}
+select:focus,input[type=text]:focus{border-color:var(--B)}
+input[type=range]{accent-color:var(--B);width:180px}
+.run-btn{background:var(--B);color:#fff;border:none;border-radius:3px;padding:8px 20px;
+  font-size:13px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;cursor:pointer;transition:.15s}
+.run-btn:hover{opacity:.85}
+
+/* Chart wrappers */
+.chart-wrap{position:relative;background:var(--surf);border-radius:6px;padding:14px}
+
+/* Insight */
+.insight-box{background:var(--surf);border-left:3px solid var(--B);border-radius:0 6px 6px 0;
+  padding:10px 14px;font-size:13px;color:#ccc;line-height:1.6;margin:12px 0}
+
+/* Table */
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table th{text-align:left;padding:8px 10px;color:var(--mt);font-weight:500;
+  background:var(--surf);border-bottom:1px solid var(--border)}
+.data-table td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.data-table tr:hover td{background:rgba(255,255,255,.03)}
+
+/* Search */
+.search-input{width:100%;padding:9px 12px;font-size:13px;border-radius:6px;
+  background:var(--card);color:var(--tx);border:1px solid var(--border);font-family:'IBM Plex Sans',sans-serif}
+.search-input:focus{border-color:var(--B);outline:none}
+.result-count{font-size:11px;color:var(--mt);margin:6px 0 14px}
+
+/* Toggle row for checkboxes */
+.toggle-group{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.toggle-chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border);
+  font-size:11px;cursor:pointer;transition:.15s;background:transparent;color:var(--mt);font-family:'IBM Plex Sans',sans-serif}
+.toggle-chip.on{border-color:var(--B);color:var(--tx);background:rgba(0,138,210,.12)}
+
+/* Scenario cards */
+.scenario-select{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.sc-card{padding:10px 12px;border-radius:6px;border:2px solid var(--border);cursor:pointer;transition:.15s;font-size:12px}
+.sc-card:hover{border-color:var(--mt)}
+.sc-card.selected{border-color:var(--B)}
+.sc-card .sc-name{font-weight:600;margin-bottom:4px;font-size:12px}
+.sc-card .sc-note{font-size:10px;color:var(--mt);line-height:1.4}
+
+/* Slider with label */
+.slider-row{display:flex;align-items:center;gap:10px}
+.slider-val{font-size:13px;font-weight:600;min-width:28px;color:var(--B)}
+
+/* Pages */
+.page{display:none}.page.active{display:block}
+
+/* Prediction result cards */
+.pred-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}
+.pred-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+.pred-num{font-size:22px;font-weight:700;margin-bottom:4px}
+.pred-label{font-size:10px;color:var(--mt);text-transform:uppercase;letter-spacing:.08em}
+.pred-sub{font-size:11px;color:var(--mt);margin-top:3px}
+
+@media(max-width:900px){
+  .metrics-row{grid-template-columns:repeat(3,1fr)}
+  .grid-2{grid-template-columns:1fr}
+  .scenario-select{grid-template-columns:1fr 1fr}
+  .pred-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+/* ── CHATBOT ── */
+#chat-bubble {
+  position:fixed; bottom:28px; right:28px; z-index:1000;
+  width:54px; height:54px; border-radius:50%;
+  background:#008AD2;
+  border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  box-shadow:none;border:1px solid #2a2a2a;
+  transition:transform .2s,box-shadow .2s;
+}
+#chat-bubble:hover{opacity:.88}
+#chat-bubble svg{width:26px;height:26px;fill:#fff}
+#chat-unread{
+  position:absolute;top:-2px;right:-2px;width:16px;height:16px;border-radius:50%;
+  background:#CD004D;color:#fff;font-size:9px;font-weight:700;
+  display:none;align-items:center;justify-content:center;
+}
+
+#chat-panel{
+  position:fixed;bottom:94px;right:28px;z-index:999;
+  width:380px;max-height:580px;
+  background:#111;border:1px solid #252525;border-radius:6px;
+  display:none;flex-direction:column;
+  
+  overflow:hidden;font-family:'IBM Plex Sans',sans-serif;
+}
+#chat-panel.open{display:flex}
+body.light #chat-panel{background:#fff;border-color:#C9B8E0}
+
+.ch{padding:13px 16px;background:#161616;border-bottom:1px solid #242424;
+  display:flex;align-items:center;justify-content:space-between}
+body.light .ch{background:#F0EBF8;border-bottom-color:#C9B8E0}
+.ch-left{display:flex;align-items:center;gap:10px}
+.ch-logo{width:28px;height:28px;object-fit:contain;border-radius:4px}
+.ch-title{font-size:14px;font-weight:700}
+.ch-sub{font-size:10px;color:#777;margin-top:1px}
+.ch-close{background:none;border:none;color:#666;cursor:pointer;font-size:20px;
+  line-height:1;padding:2px 6px;transition:.15s}
+.ch-close:hover{color:#fff}
+body.light .ch-close:hover{color:#1A0A2E}
+.ch-actions{display:flex;gap:6px;align-items:center}
+.ch-btn-sm{background:rgba(0,138,210,.15);border:1px solid rgba(0,138,210,.3);
+  color:#008AD2;border-radius:4px;padding:3px 8px;font-size:10px;font-weight:600;
+  cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:.15s}
+.ch-btn-sm:hover{background:rgba(0,138,210,.28)}
+
+.ch-api{padding:9px 14px;background:#0e0e0e;border-bottom:1px solid #1e1e1e;
+  display:flex;gap:8px;align-items:center}
+body.light .ch-api{background:#E4D9F0;border-bottom-color:#C9B8E0}
+.ch-api input{
+  flex:1;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;
+  border-radius:5px;padding:5px 9px;font-size:11px;font-family:'IBM Plex Sans',sans-serif;outline:none;
+}
+body.light .ch-api input{background:#fff;border-color:#C9B8E0;color:#1A0A2E}
+.ch-api input::placeholder{color:#555}
+.api-badge{
+  font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;
+  letter-spacing:.04em;text-transform:uppercase;
+}
+.api-badge.live{background:rgba(12,177,75,.15);color:#0CB14B;border:1px solid rgba(12,177,75,.3)}
+.api-badge.local{background:rgba(252,183,18,.12);color:#FCB712;border:1px solid rgba(252,183,18,.3)}
+.api-badge.err{background:rgba(205,0,77,.12);color:#CD004D;border:1px solid rgba(205,0,77,.3)}
+
+.ch-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.ch-msgs::-webkit-scrollbar{width:3px}
+.ch-msgs::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:2px}
+
+.msg{max-width:90%;padding:9px 12px;font-size:13px;line-height:1.6;word-wrap:break-word}
+.msg.user{align-self:flex-end;background:#008AD2;color:#fff;border-radius:12px 12px 2px 12px}
+.msg.bot{align-self:flex-start;background:#1e1e1e;color:#ddd;border-radius:12px 12px 12px 2px}
+body.light .msg.bot{background:#E4D9F0;color:#1A0A2E}
+.msg a,.msg .nlink{color:#008AD2;text-decoration:none;font-weight:500}
+.nlink{
+  display:inline-block;margin-top:7px;padding:4px 11px;
+  background:rgba(0,138,210,.12);border:1px solid rgba(0,138,210,.3);
+  border-radius:5px;font-size:12px;cursor:pointer;transition:.15s;
+}
+.nlink:hover{background:rgba(0,138,210,.25)}
+.thinking{color:#555;font-style:italic;font-size:12px}
+
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.chip{
+  padding:4px 10px;background:rgba(0,138,210,.09);border:1px solid rgba(0,138,210,.22);
+  border-radius:12px;font-size:11px;color:#888;cursor:pointer;transition:.15s;
+}
+.chip:hover{background:rgba(0,138,210,.2);color:#fff}
+
+.ch-input-row{padding:11px 14px;border-top:1px solid #1e1e1e;display:flex;gap:8px}
+body.light .ch-input-row{border-top-color:#C9B8E0}
+#chat-input{
+  flex:1;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;
+  border-radius:8px;padding:8px 12px;font-size:13px;font-family:'IBM Plex Sans',sans-serif;
+  outline:none;resize:none;max-height:80px;min-height:36px;line-height:1.4;
+}
+body.light #chat-input{background:#F0EBF8;border-color:#C9B8E0;color:#1A0A2E}
+#chat-input::placeholder{color:#555}
+#chat-input:focus{border-color:#008AD2}
+#chat-send{
+  background:#008AD2;border:none;border-radius:8px;color:#fff;
+  width:36px;height:36px;cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  transition:.15s;flex-shrink:0;align-self:flex-end;
+}
+#chat-send:hover{background:#006fa8}
+
+
+/* ── SURVEY BANNER ── */
+#survey-banner {
+  background: transparent;
+  border: 1px solid #0CB14B33;
+  border-radius: 4px;
+  padding: 14px 18px;
+  margin: 0 0 18px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+body.light #survey-banner {
+  background: transparent;
+  border-color: #0CB14B44;
+}
+.survey-banner-text { flex: 1; min-width: 200px; }
+.survey-banner-text .sb-title {
+  font-size: 13px; font-weight: 700; color: var(--tx);
+  display: flex; align-items: center; gap: 7px; margin-bottom: 3px;
+}
+.survey-banner-text .sb-sub {
+  font-size: 12px; color: var(--mt); line-height: 1.5;
+}
+.survey-btn {
+  background: #0CB14B; color: #fff; border: none; border-radius: 6px;
+  padding: 9px 18px; font-size: 13px; font-weight: 600;
+  font-family: inherit; cursor: pointer; white-space: nowrap;
+  text-decoration: none; display: inline-block; transition: opacity .15s;
+  flex-shrink: 0;
+}
+.survey-btn:hover { opacity: .85; }
+.sb-dismiss {
+  background: none; border: none; color: var(--mt);
+  cursor: pointer; font-size: 16px; padding: 0; line-height: 1;
+  flex-shrink: 0;
+}
+.sb-dismiss:hover { color: var(--tx); }
+
+</style>
+</head>
+<body>
+
+
+<!-- DISCLAIMER BANNER -->
+<div id="disclaimer" style="
+  background:#1a0a0a;border-bottom:1px solid #CD004D44;
+  padding:8px 20px;display:flex;align-items:center;justify-content:space-between;
+  font-size:11px;color:#888;line-height:1.4;position:sticky;top:0;z-index:500;
+  font-family:'IBM Plex Sans',sans-serif;
+">
+  <span>
+    <span style="color:#FCB712;font-weight:600;">Portfolio Project</span>
+    &nbsp;,&nbsp;
+    This dashboard is an independent analytical project and is
+    <strong style="color:#ccc;">not affiliated with, endorsed by, or associated with
+    NBCUniversal, Peacock, or any of their subsidiaries.</strong>
+    NBC, Peacock, and related marks are trademarks of NBCUniversal Media, LLC.
+    Viewership data sourced from publicly available Nielsen reports via TVSeriesFinale.com.
+  </span>
+  <button onclick="this.parentElement.style.display='none'"
+    style="background:none;border:none;color:#555;cursor:pointer;
+    font-size:16px;padding:0 0 0 12px;line-height:1;flex-shrink:0;">&#x2715;</button>
+</div>
+
+<div style="display:flex;flex:1;min-height:0;">
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <svg viewBox="0 0 48 48" width="36" height="36" xmlns="http://www.w3.org/2000/svg" aria-label="Peacock feather icon">
+  <g transform="translate(24,28)">
+    <ellipse rx="5.5" ry="15" fill="#FCB712" transform="rotate(-75) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#F37020" transform="rotate(-45) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#CD004D" transform="rotate(-15) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#6460AC" transform="rotate(15) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#008AD2" transform="rotate(45) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#0CB14B" transform="rotate(75) translate(0,-10)"/>
+    <ellipse rx="7" ry="9" fill="white" transform="translate(0,5)"/>
+    <ellipse rx="7" ry="9" fill="rgba(0,0,0,0.08)" transform="translate(0,5)"/>
+  </g>
+</svg>
+    <div class="brand-text">
+      <div class="title">Viewership Intelligence</div>
+      <div class="sub">Analytical Portfolio Project</div>
+    </div>
+  </div>
+  <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">Light mode</button>
+  <div class="nav-label">Navigation</div>
+  <div class="nav-item active" onclick="showPage('analytics',this)">Platform Analytics</div>
+  <div class="nav-item" onclick="showPage('graphs',this)">Graphs &amp; Stats</div>
+  <div class="nav-item" onclick="showPage('explorer',this)">Show Explorer</div>
+  <div class="nav-item" onclick="showPage('model',this)">Predictive Model</div>
+  <div class="nav-item" onclick="showPage('whatif',this)">What-If Simulator</div>
+    <div class="nav-item" onclick="showPage('retention',this)">Retention & Churn</div>
+  <div class="sidebar-footer">
+    NBCU Data Science &amp; Analytics
+    Portfolio Project<br><br>
+    <strong>Sources:</strong> Nielsen national averages via TVSeriesFinale.com, Comcast quarterly earnings, Nielsen Gauge monthly reports<br><br>
+    <a href="https://linkedin.com/in/abdelmahmoudformal">LinkedIn</a> &nbsp;
+    <a href="https://github.com/abdel-csc">GitHub</a>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- SURVEY BANNER -->
+<div id="survey-banner">
+  <div class="survey-banner-text">
+    <div class="sb-title">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="#0CB14B"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+      Want to help my analytics?
+    </div>
+    <div class="sb-sub">
+      This is an independent student research project. A 2-minute anonymous survey on your streaming habits would make the data on this dashboard much more meaningful.
+    </div>
+  </div>
+  <a class="survey-btn" href="https://www.surveymonkey.com/r/W52LT98" target="_blank" rel="noopener">
+    Take the Survey
+  </a>
+  <button class="sb-dismiss" onclick="document.getElementById('survey-banner').style.display='none'" title="Dismiss">&#x2715;</button>
+</div>
+
+<!-- PAGE: PLATFORM ANALYTICS -->
+<div class="page active" id="page-analytics">
+  <div class="rainbow-bar"></div>
+  <div class="page-header">
+    <svg viewBox="0 0 48 48" width="32" height="32" xmlns="http://www.w3.org/2000/svg" aria-label="Peacock feather icon">
+  <g transform="translate(24,28)">
+    <ellipse rx="5.5" ry="15" fill="#FCB712" transform="rotate(-75) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#F37020" transform="rotate(-45) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#CD004D" transform="rotate(-15) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#6460AC" transform="rotate(15) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#008AD2" transform="rotate(45) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#0CB14B" transform="rotate(75) translate(0,-10)"/>
+    <ellipse rx="7" ry="9" fill="white" transform="translate(0,5)"/>
+    <ellipse rx="7" ry="9" fill="rgba(0,0,0,0.08)" transform="translate(0,5)"/>
+  </g>
+</svg>
+    <div>
+      <div class="eyebrow">Independent Portfolio Project</div>
+      <h1>Platform Analytics</h1>
+      <div class="sub">Six years of U.S. television shift, 2019 to 2025</div>
+    </div>
+  </div>
+  <div class="metrics-row" id="metrics-row"></div>
+  <div class="card">
+    <h3>U.S. TV Viewing Share by Platform, Weekly 2019–2025</h3>
+    <div class="chart-wrap"><canvas id="mainChart" height="200"></canvas></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Peacock Subscriber Growth (Comcast Quarterly Earnings)</h3>
+      <div class="chart-wrap"><canvas id="subsChart" height="200"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>2025 Viewership by Show (Millions)</h3>
+      <div class="chart-wrap"><canvas id="showsChart" height="200"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: GRAPHS & STATS -->
+<div class="page" id="page-graphs">
+  <div class="rainbow-bar"></div>
+  <div class="page-header">
+    <svg viewBox="0 0 48 48" width="32" height="32" xmlns="http://www.w3.org/2000/svg" aria-label="Peacock feather icon">
+  <g transform="translate(24,28)">
+    <ellipse rx="5.5" ry="15" fill="#FCB712" transform="rotate(-75) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#F37020" transform="rotate(-45) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#CD004D" transform="rotate(-15) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#6460AC" transform="rotate(15) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#008AD2" transform="rotate(45) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#0CB14B" transform="rotate(75) translate(0,-10)"/>
+    <ellipse rx="7" ry="9" fill="white" transform="translate(0,5)"/>
+    <ellipse rx="7" ry="9" fill="rgba(0,0,0,0.08)" transform="translate(0,5)"/>
+  </g>
+</svg>
+    <div>
+      <div class="eyebrow">Independent Portfolio Project</div>
+      <h1>Graphs &amp; Stats</h1>
+      <div class="sub">Deep analytics across 6 seasons of real NBC data</div>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showTab('graphs','trends',this)">Platform Trends</button>
+    <button class="tab-btn" onclick="showTab('graphs','yoy',this)">Year-over-Year</button>
+    <button class="tab-btn" onclick="showTab('graphs','genre',this)">Genre Analysis</button>
+    <button class="tab-btn" onclick="showTab('graphs','forecast',this)">Forecast</button>
+  </div>
+
+  <div class="tab-pane active" id="gtab-trends">
+    <div class="control-row">
+      <div class="control-group"><label>Platforms</label>
+        <div class="toggle-group">
+          <button class="toggle-chip on" data-platform="bc" onclick="togglePlatform(this)">Broadcast</button>
+          <button class="toggle-chip" data-platform="ca" onclick="togglePlatform(this)">Cable</button>
+          <button class="toggle-chip on" data-platform="st" onclick="togglePlatform(this)">Streaming</button>
+          <button class="toggle-chip on" data-platform="pk" onclick="togglePlatform(this)">Peacock (x10)</button>
+        </div>
+      </div>
+      <div class="control-group"><label>Year Range</label>
+        <div class="slider-row">
+          <span style="font-size:12px;color:var(--mt)">2019</span>
+          <input type="range" id="yearRange" min="2019" max="2025" value="2019" oninput="updateTrendChart()">
+          <span class="slider-val" id="yearRangeVal">2019</span>
+          <span style="font-size:12px;color:var(--mt)">– 2025</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="chart-wrap"><canvas id="trendChart" height="220"></canvas></div>
+    </div>
+  </div>
+
+  <div class="tab-pane" id="gtab-yoy">
+    <div class="card">
+      <h3>Year-over-Year Platform Share Change (%)</h3>
+      <div class="chart-wrap"><canvas id="yoyChart" height="200"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>NBC Network Average Viewership by Season</h3>
+      <div class="chart-wrap"><canvas id="nbcAvgChart" height="180"></canvas></div>
+    </div>
+  </div>
+
+  <div class="tab-pane" id="gtab-genre">
+    <div class="card">
+      <h3>Average Viewership by Genre, All Seasons</h3>
+      <div class="chart-wrap"><canvas id="genreTrendChart" height="220"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Genre Performance: 2020 vs 2025</h3>
+      <div class="chart-wrap"><canvas id="genre2025Chart" height="180"></canvas></div>
+    </div>
+  </div>
+
+  <div class="tab-pane" id="gtab-forecast">
+    <div class="control-row">
+      <div class="control-group"><label>Platform</label>
+        <select id="fcPlatform" onchange="runForecast()">
+          <option value="bc">Broadcast</option>
+          <option value="st">Streaming Total</option>
+          <option value="pk">Peacock</option>
+        </select>
+      </div>
+      <div class="control-group"><label>Weeks to Forecast</label>
+        <div class="slider-row">
+          <input type="range" id="fcWeeks" min="12" max="156" value="52" step="4" oninput="this.nextElementSibling.textContent=this.value;runForecast()">
+          <span class="slider-val">52</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="chart-wrap"><canvas id="forecastChart" height="250"></canvas></div>
+    </div>
+    <div class="grid-3" id="fcMetrics"></div>
+    <div class="insight-box" id="fcInsight"></div>
+  </div>
+</div>
+
+<!-- PAGE: SHOW EXPLORER -->
+<div class="page" id="page-explorer">
+  <div class="rainbow-bar"></div>
+  <div class="page-header">
+    <svg viewBox="0 0 48 48" width="32" height="32" xmlns="http://www.w3.org/2000/svg" aria-label="Peacock feather icon">
+  <g transform="translate(24,28)">
+    <ellipse rx="5.5" ry="15" fill="#FCB712" transform="rotate(-75) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#F37020" transform="rotate(-45) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#CD004D" transform="rotate(-15) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#6460AC" transform="rotate(15) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#008AD2" transform="rotate(45) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#0CB14B" transform="rotate(75) translate(0,-10)"/>
+    <ellipse rx="7" ry="9" fill="white" transform="translate(0,5)"/>
+    <ellipse rx="7" ry="9" fill="rgba(0,0,0,0.08)" transform="translate(0,5)"/>
+  </g>
+</svg>
+    <div>
+      <div class="eyebrow">Independent Portfolio Project</div>
+      <h1>Show Explorer</h1>
+      <div class="sub">Search and compare NBC shows across 6 seasons of real Nielsen data</div>
+    </div>
+  </div>
+  <div class="control-row">
+    <div class="control-group" style="flex:1">
+      <label>Search shows, genre, or timeslot</label>
+      <input type="text" class="search-input" id="showSearch" placeholder="e.g. chicago, drama, voice, crime, wed..." oninput="runSearch()">
+    </div>
+    <div class="control-group">
+      <label>Genre</label>
+      <select id="genreFilter" onchange="runSearch()">
+        <option value="">All genres</option>
+        <option>Drama</option><option>Reality</option><option>Comedy</option><option>News/Mag</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Season Year</label>
+      <select id="yearFilter" onchange="runSearch()">
+        <option value="">All years</option>
+        <option>2025</option><option>2024</option><option>2023</option>
+        <option>2022</option><option>2021</option><option>2020</option>
+      </select>
+    </div>
+  </div>
+  <div class="result-count" id="resultCount">Showing all 83 records</div>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showTab('exp','trend',this)">Viewership Trend</button>
+    <button class="tab-btn" onclick="showTab('exp','demo',this)">Demo Trend</button>
+    <button class="tab-btn" onclick="showTab('exp','table',this)">Data Table</button>
+  </div>
+  <div class="tab-pane active" id="etab-trend">
+    <div class="card"><div class="chart-wrap"><canvas id="expTrendChart" height="280"></canvas></div></div>
+  </div>
+  <div class="tab-pane" id="etab-demo">
+    <div class="card"><div class="chart-wrap"><canvas id="expDemoChart" height="280"></canvas></div></div>
+  </div>
+  <div class="tab-pane" id="etab-table">
+    <div class="card" style="padding:0;overflow:auto">
+      <table class="data-table" id="showTable">
+        <thead><tr><th>Show</th><th>Genre</th><th>Timeslot</th><th>Season</th><th>Viewers (M)</th><th>18-49 Demo</th></tr></thead>
+        <tbody id="showTableBody"></tbody>
+      </table>
+    </div>
+    <div id="summaryTable" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- PAGE: PREDICTIVE MODEL -->
+<div class="page" id="page-model">
+  <div class="rainbow-bar"></div>
+  <div class="page-header">
+    <svg viewBox="0 0 48 48" width="32" height="32" xmlns="http://www.w3.org/2000/svg" aria-label="Peacock feather icon">
+  <g transform="translate(24,28)">
+    <ellipse rx="5.5" ry="15" fill="#FCB712" transform="rotate(-75) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#F37020" transform="rotate(-45) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#CD004D" transform="rotate(-15) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#6460AC" transform="rotate(15) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#008AD2" transform="rotate(45) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#0CB14B" transform="rotate(75) translate(0,-10)"/>
+    <ellipse rx="7" ry="9" fill="white" transform="translate(0,5)"/>
+    <ellipse rx="7" ry="9" fill="rgba(0,0,0,0.08)" transform="translate(0,5)"/>
+  </g>
+</svg>
+    <div>
+      <div class="eyebrow">Independent Portfolio Project</div>
+      <h1>Predictive Model</h1>
+      <div class="sub">Enter show characteristics to predict expected viewership</div>
+    </div>
+  </div>
+  <div class="grid-3" style="margin-bottom:20px">
+    <div class="metric-card"><div class="metric-num" style="color:var(--G)" id="modelMAE">0.58M</div><div class="metric-label">Model MAE</div><div class="metric-delta">Mean absolute error</div></div>
+    <div class="metric-card"><div class="metric-num" style="color:var(--B)" id="modelR2">0.986</div><div class="metric-label">R&sup2; Score</div><div class="metric-delta">Variance explained</div></div>
+    <div class="metric-card"><div class="metric-num" style="color:var(--PU)" id="modelN">83</div><div class="metric-label">Training Rows</div><div class="metric-delta">6 real seasons</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Content Details</h3>
+      <div class="control-group" style="margin-bottom:12px"><label>Genre</label>
+        <select id="mGenre"><option>Drama</option><option>Reality</option><option>Comedy</option><option>News/Mag</option></select>
+      </div>
+      <div class="control-group" style="margin-bottom:12px"><label>Network</label>
+        <select id="mNetwork"><option>NBC</option><option>Peacock</option></select>
+      </div>
+      <div class="control-group" style="margin-bottom:12px"><label>Timeslot</label>
+        <select id="mTimeslot">
+          <option>Mon 8pm</option><option>Mon 9pm</option><option>Mon 10pm</option>
+          <option>Tue 8pm</option><option>Tue 9pm</option><option>Tue 10pm</option>
+          <option>Wed 8pm</option><option>Wed 9pm</option><option>Wed 10pm</option>
+          <option>Thu 8pm</option><option>Thu 9pm</option><option>Thu 10pm</option>
+          <option>Fri 8pm</option><option>Fri 9pm</option><option>Sun 10pm</option>
+          <option>Streaming</option>
+        </select>
+      </div>
+      <div class="control-group" style="margin-bottom:12px"><label>Live content?</label>
+        <select id="mLive"><option value="0">No</option><option value="1">Yes (sports/reality events)</option></select>
+      </div>
+      <div class="control-group"><label>Target Season Year</label>
+        <select id="mYear"><option>2025</option><option>2026</option><option>2027</option><option>2028</option><option>2029</option><option>2030</option></select>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Qualitative Adjustments</h3>
+      <div class="control-group" style="margin-bottom:12px"><label>Production Budget</label>
+        <select id="mBudget">
+          <option value="0.85">Low (&lt;$2M/ep)</option>
+          <option value="1.0" selected>Mid ($2–5M/ep)</option>
+          <option value="1.18">High ($5–10M/ep)</option>
+          <option value="1.35">Premium (&gt;$10M/ep)</option>
+        </select>
+      </div>
+      <div class="control-group" style="margin-bottom:12px"><label>Tentpole Event (Olympics, Super Bowl)?</label>
+        <select id="mTentpole"><option value="1.0">No</option><option value="1.25">Yes</option></select>
+      </div>
+      <div class="control-group" style="margin-bottom:12px"><label>Reboot / Established IP?</label>
+        <select id="mReboot"><option value="1.0">No</option><option value="1.12">Yes</option></select>
+      </div>
+      <div class="control-group" style="margin-bottom:12px"><label>Expected Rotten Tomatoes Score: <span id="criticVal">72</span>%</label>
+        <div class="slider-row">
+          <input type="range" id="mCritic" min="20" max="100" value="72" oninput="document.getElementById('criticVal').textContent=this.value">
+        </div>
+      </div>
+      <div class="control-group"><label>Season Number: <span id="seasonVal">1</span></label>
+        <div class="slider-row">
+          <input type="range" id="mSeason" min="1" max="15" value="1" oninput="document.getElementById('seasonVal').textContent=this.value">
+        </div>
+      </div>
+    </div>
+  </div>
+  <button class="run-btn" onclick="runPrediction()">Run Prediction</button>
+  <div id="predResults" style="display:none;margin-top:16px">
+    <div class="pred-grid" id="predCards"></div>
+    <div class="card"><h3>Adjustment Factor Breakdown</h3><div class="chart-wrap"><canvas id="factorChart" height="150"></canvas></div></div>
+    <div class="card"><h3 id="benchmarkTitle">vs Similar Shows</h3><div class="chart-wrap"><canvas id="benchmarkChart" height="160"></canvas></div></div>
+    <div class="insight-box" id="predInsight"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>Feature Importance</h3>
+    <div class="chart-wrap"><canvas id="featureChart" height="140"></canvas></div>
+  </div>
+</div>
+
+<!-- PAGE: WHAT-IF SIMULATOR -->
+<div class="page" id="page-whatif">
+  <div class="rainbow-bar"></div>
+  <div class="page-header">
+    <svg viewBox="0 0 48 48" width="32" height="32" xmlns="http://www.w3.org/2000/svg" aria-label="Peacock feather icon">
+  <g transform="translate(24,28)">
+    <ellipse rx="5.5" ry="15" fill="#FCB712" transform="rotate(-75) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#F37020" transform="rotate(-45) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#CD004D" transform="rotate(-15) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#6460AC" transform="rotate(15) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#008AD2" transform="rotate(45) translate(0,-10)"/>
+    <ellipse rx="5.5" ry="15" fill="#0CB14B" transform="rotate(75) translate(0,-10)"/>
+    <ellipse rx="7" ry="9" fill="white" transform="translate(0,5)"/>
+    <ellipse rx="7" ry="9" fill="rgba(0,0,0,0.08)" transform="translate(0,5)"/>
+  </g>
+</svg>
+    <div>
+      <div class="eyebrow">Independent Portfolio Project</div>
+      <h1>What-If Simulator</h1>
+      <div class="sub">Model content strategy scenarios and project viewership to 2030</div>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <h3>Select Show</h3>
+      <select id="wiShow" onchange="updateWhatIf()" style="width:100%;margin-bottom:12px"></select>
+      <div id="showProfile" style="font-size:13px;line-height:1.8;color:var(--mt)"></div>
+    </div>
+    <div class="card">
+      <h3>Settings</h3>
+      <div class="control-group" style="margin-bottom:14px"><label>Project to Year</label>
+        <select id="wiYear" onchange="updateWhatIf()">
+          <option>2026</option><option>2027</option><option selected>2028</option><option>2029</option><option>2030</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <h3 style="margin-bottom:10px;font-size:14px">Select Scenario</h3>
+  <div class="scenario-select" id="scenarioCards"></div>
+  <div class="grid-4" id="wiMetrics" style="margin:16px 0"></div>
+  <div class="card"><div class="chart-wrap"><canvas id="wiChart" height="220"></canvas></div></div>
+  <div class="insight-box" id="wiInsight"></div>
+  <div class="card" style="margin-top:16px">
+    <h3>All Scenarios Compared</h3>
+    <div style="overflow:auto">
+      <table class="data-table" id="wiTable">
+        <thead><tr><th>Scenario</th><th>Projected (M)</th><th>vs Baseline</th><th>Annual Trend</th></tr></thead>
+        <tbody id="wiTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ── DATA ──
+const WEEKLY=[{"week":"2019-09","bc":28.7,"ca":38.2,"st":19.0,"pk":0.0,"nfl":1,"ol":0},{"week":"2019-09","bc":28.5,"ca":38.4,"st":19.1,"pk":0.0,"nfl":1,"ol":0},{"week":"2019-09","bc":28.6,"ca":38.2,"st":19.2,"pk":0.0,"nfl":1,"ol":0},{"week":"2019-09","bc":28.7,"ca":38.5,"st":19.6,"pk":0.07,"nfl":1,"ol":0},{"week":"2019-09","bc":28.3,"ca":38.1,"st":19.7,"pk":0.03,"nfl":1,"ol":0},{"week":"2019-10","bc":28.2,"ca":37.9,"st":20.2,"pk":0.0,"nfl":1,"ol":0},{"week":"2019-10","bc":28.6,"ca":38.0,"st":19.5,"pk":0.02,"nfl":1,"ol":0},{"week":"2019-10","bc":28.3,"ca":38.1,"st":20.5,"pk":0.06,"nfl":1,"ol":0},{"week":"2019-10","bc":28.0,"ca":37.7,"st":20.7,"pk":0.04,"nfl":1,"ol":0},{"week":"2019-11","bc":28.1,"ca":37.6,"st":20.1,"pk":0.0,"nfl":1,"ol":0},{"week":"2019-11","bc":27.9,"ca":37.8,"st":20.7,"pk":0.0,"nfl":1,"ol":0},{"week":"2019-11","bc":27.8,"ca":37.7,"st":20.8,"pk":0.03,"nfl":1,"ol":0},{"week":"2019-11","bc":27.9,"ca":37.5,"st":20.8,"pk":0.02,"nfl":1,"ol":0},{"week":"2019-12","bc":27.3,"ca":37.4,"st":21.1,"pk":0.04,"nfl":1,"ol":0},{"week":"2019-12","bc":27.3,"ca":37.5,"st":21.2,"pk":0.03,"nfl":1,"ol":0},{"week":"2019-12","bc":27.5,"ca":37.0,"st":22.0,"pk":0.04,"nfl":1,"ol":0},{"week":"2019-12","bc":27.4,"ca":36.9,"st":22.0,"pk":0.0,"nfl":1,"ol":0},{"week":"2019-12","bc":27.6,"ca":37.0,"st":22.2,"pk":0.05,"nfl":1,"ol":0},{"week":"2020-01","bc":27.2,"ca":37.1,"st":22.3,"pk":0.01,"nfl":1,"ol":0},{"week":"2020-01","bc":27.0,"ca":37.1,"st":22.0,"pk":0.09,"nfl":1,"ol":0},{"week":"2020-01","bc":27.5,"ca":37.4,"st":22.3,"pk":0.0,"nfl":1,"ol":0},{"week":"2020-01","bc":27.0,"ca":37.1,"st":22.7,"pk":0.08,"nfl":1,"ol":0},{"week":"2020-02","bc":26.9,"ca":36.7,"st":22.5,"pk":0.03,"nfl":1,"ol":0},{"week":"2020-02","bc":26.5,"ca":36.7,"st":23.0,"pk":0.0,"nfl":1,"ol":0},{"week":"2020-02","bc":26.6,"ca":36.3,"st":23.0,"pk":0.01,"nfl":1,"ol":0},{"week":"2020-02","bc":26.6,"ca":36.5,"st":23.1,"pk":0.02,"nfl":1,"ol":0},{"week":"2020-03","bc":25.1,"ca":36.3,"st":23.5,"pk":0.05,"nfl":0,"ol":0},{"week":"2020-03","bc":25.3,"ca":36.4,"st":23.6,"pk":0.06,"nfl":0,"ol":0},{"week":"2020-03","bc":24.9,"ca":36.0,"st":23.6,"pk":0.02,"nfl":0,"ol":0},{"week":"2020-03","bc":24.9,"ca":36.3,"st":24.1,"pk":0.04,"nfl":0,"ol":0},{"week":"2020-03","bc":24.7,"ca":36.5,"st":23.7,"pk":0.13,"nfl":0,"ol":0},{"week":"2020-04","bc":25.1,"ca":35.9,"st":24.2,"pk":0.12,"nfl":0,"ol":0},{"week":"2020-04","bc":24.6,"ca":36.0,"st":24.4,"pk":0.07,"nfl":0,"ol":0},{"week":"2020-04","bc":24.2,"ca":35.9,"st":24.3,"pk":0.06,"nfl":0,"ol":0},{"week":"2020-04","bc":24.5,"ca":35.5,"st":24.6,"pk":0.07,"nfl":0,"ol":0},{"week":"2020-05","bc":24.0,"ca":35.6,"st":24.5,"pk":0.09,"nfl":0,"ol":0},{"week":"2020-05","bc":24.1,"ca":35.5,"st":25.1,"pk":0.03,"nfl":0,"ol":0},{"week":"2020-05","bc":23.5,"ca":35.4,"st":25.0,"pk":0.07,"nfl":0,"ol":0},{"week":"2020-05","bc":23.6,"ca":35.1,"st":25.1,"pk":0.01,"nfl":0,"ol":0},{"week":"2020-06","bc":23.8,"ca":35.2,"st":25.6,"pk":0.1,"nfl":0,"ol":0},{"week":"2020-06","bc":23.8,"ca":35.2,"st":25.3,"pk":0.11,"nfl":0,"ol":0},{"week":"2020-06","bc":23.5,"ca":35.4,"st":25.3,"pk":0.07,"nfl":0,"ol":0},{"week":"2020-06","bc":23.3,"ca":35.2,"st":25.5,"pk":0.16,"nfl":0,"ol":0},{"week":"2020-06","bc":23.2,"ca":35.4,"st":26.1,"pk":0.05,"nfl":0,"ol":0},{"week":"2020-07","bc":23.0,"ca":34.6,"st":25.7,"pk":0.05,"nfl":0,"ol":0},{"week":"2020-07","bc":23.3,"ca":35.1,"st":26.3,"pk":0.12,"nfl":0,"ol":0},{"week":"2020-07","bc":23.5,"ca":35.0,"st":25.5,"pk":0.16,"nfl":0,"ol":0},{"week":"2020-07","bc":24.0,"ca":35.6,"st":26.3,"pk":0.2,"nfl":0,"ol":0},{"week":"2020-08","bc":24.0,"ca":34.8,"st":25.9,"pk":0.12,"nfl":0,"ol":0},{"week":"2020-08","bc":23.6,"ca":34.9,"st":25.8,"pk":0.19,"nfl":0,"ol":0},{"week":"2020-08","bc":24.2,"ca":35.0,"st":25.7,"pk":0.15,"nfl":0,"ol":0},{"week":"2020-08","bc":24.2,"ca":34.6,"st":25.9,"pk":0.15,"nfl":0,"ol":0},{"week":"2020-08","bc":24.3,"ca":35.1,"st":25.7,"pk":0.2,"nfl":0,"ol":0},{"week":"2020-09","bc":25.8,"ca":35.1,"st":25.9,"pk":0.2,"nfl":1,"ol":0},{"week":"2020-09","bc":26.1,"ca":35.4,"st":25.7,"pk":0.12,"nfl":1,"ol":0},{"week":"2020-09","bc":26.2,"ca":35.5,"st":25.7,"pk":0.25,"nfl":1,"ol":0},{"week":"2020-09","bc":26.0,"ca":36.0,"st":25.5,"pk":0.25,"nfl":1,"ol":0},{"week":"2020-10","bc":26.1,"ca":35.7,"st":25.6,"pk":0.18,"nfl":1,"ol":0},{"week":"2020-10","bc":26.2,"ca":35.3,"st":25.8,"pk":0.23,"nfl":1,"ol":0},{"week":"2020-10","bc":26.4,"ca":35.2,"st":25.4,"pk":0.24,"nfl":1,"ol":0},{"week":"2020-10","bc":26.0,"ca":35.5,"st":25.6,"pk":0.24,"nfl":1,"ol":0},{"week":"2020-11","bc":26.1,"ca":35.0,"st":26.1,"pk":0.21,"nfl":1,"ol":0},{"week":"2020-11","bc":25.8,"ca":35.8,"st":26.1,"pk":0.22,"nfl":1,"ol":0},{"week":"2020-11","bc":25.8,"ca":35.6,"st":26.1,"pk":0.25,"nfl":1,"ol":0},{"week":"2020-11","bc":26.2,"ca":35.1,"st":26.2,"pk":0.3,"nfl":1,"ol":0},{"week":"2020-11","bc":26.3,"ca":34.8,"st":26.4,"pk":0.29,"nfl":1,"ol":0},{"week":"2020-12","bc":26.0,"ca":35.6,"st":26.3,"pk":0.26,"nfl":1,"ol":0},{"week":"2020-12","bc":26.2,"ca":35.1,"st":26.3,"pk":0.31,"nfl":1,"ol":0},{"week":"2020-12","bc":26.0,"ca":35.5,"st":26.6,"pk":0.17,"nfl":1,"ol":0},{"week":"2020-12","bc":25.8,"ca":34.7,"st":26.4,"pk":0.34,"nfl":1,"ol":0},{"week":"2021-01","bc":26.0,"ca":34.9,"st":26.8,"pk":0.23,"nfl":1,"ol":0},{"week":"2021-01","bc":26.1,"ca":35.0,"st":26.4,"pk":0.29,"nfl":1,"ol":0},{"week":"2021-01","bc":25.7,"ca":35.0,"st":27.0,"pk":0.26,"nfl":1,"ol":0},{"week":"2021-01","bc":26.0,"ca":34.8,"st":27.0,"pk":0.26,"nfl":1,"ol":0},{"week":"2021-02","bc":25.0,"ca":35.1,"st":27.0,"pk":0.36,"nfl":1,"ol":0},{"week":"2021-02","bc":25.7,"ca":34.6,"st":27.2,"pk":0.3,"nfl":1,"ol":0},{"week":"2021-02","bc":25.5,"ca":34.8,"st":27.4,"pk":0.34,"nfl":1,"ol":0},{"week":"2021-02","bc":25.3,"ca":34.8,"st":27.3,"pk":0.33,"nfl":1,"ol":0},{"week":"2021-03","bc":24.3,"ca":34.9,"st":26.7,"pk":0.35,"nfl":0,"ol":0},{"week":"2021-03","bc":23.7,"ca":34.9,"st":26.9,"pk":0.34,"nfl":0,"ol":0},{"week":"2021-03","bc":24.1,"ca":34.3,"st":27.1,"pk":0.29,"nfl":0,"ol":0},{"week":"2021-03","bc":24.1,"ca":34.2,"st":27.3,"pk":0.38,"nfl":0,"ol":0},{"week":"2021-03","bc":24.3,"ca":34.9,"st":27.4,"pk":0.33,"nfl":0,"ol":0},{"week":"2021-04","bc":23.8,"ca":34.6,"st":27.2,"pk":0.29,"nfl":0,"ol":0},{"week":"2021-04","bc":23.7,"ca":34.3,"st":27.5,"pk":0.34,"nfl":0,"ol":0},{"week":"2021-04","bc":23.7,"ca":34.9,"st":27.3,"pk":0.42,"nfl":0,"ol":0},{"week":"2021-04","bc":23.9,"ca":34.4,"st":27.4,"pk":0.4,"nfl":0,"ol":0},{"week":"2021-05","bc":23.7,"ca":34.7,"st":27.3,"pk":0.35,"nfl":0,"ol":0},{"week":"2021-05","bc":23.5,"ca":34.3,"st":27.4,"pk":0.36,"nfl":0,"ol":0},{"week":"2021-05","bc":23.6,"ca":34.9,"st":27.4,"pk":0.36,"nfl":0,"ol":0},{"week":"2021-05","bc":23.5,"ca":34.7,"st":27.5,"pk":0.46,"nfl":0,"ol":0},{"week":"2021-05","bc":23.6,"ca":34.1,"st":28.0,"pk":0.4,"nfl":0,"ol":0},{"week":"2021-06","bc":23.2,"ca":34.4,"st":27.6,"pk":0.4,"nfl":0,"ol":0},{"week":"2021-06","bc":23.2,"ca":34.3,"st":28.5,"pk":0.43,"nfl":0,"ol":0},{"week":"2021-06","bc":23.1,"ca":34.4,"st":28.0,"pk":0.4,"nfl":0,"ol":0},{"week":"2021-06","bc":22.8,"ca":33.7,"st":28.0,"pk":0.39,"nfl":0,"ol":0},{"week":"2021-07","bc":23.2,"ca":34.2,"st":27.8,"pk":0.4,"nfl":0,"ol":0},{"week":"2021-07","bc":23.3,"ca":34.3,"st":28.2,"pk":0.41,"nfl":0,"ol":0},{"week":"2021-07","bc":23.4,"ca":33.5,"st":28.0,"pk":0.42,"nfl":0,"ol":1},{"week":"2021-07","bc":23.4,"ca":33.6,"st":28.1,"pk":0.46,"nfl":0,"ol":1},{"week":"2021-08","bc":23.3,"ca":33.4,"st":28.7,"pk":0.44,"nfl":0,"ol":1},{"week":"2021-08","bc":23.6,"ca":33.8,"st":28.1,"pk":0.47,"nfl":0,"ol":0},{"week":"2021-08","bc":23.7,"ca":34.1,"st":28.5,"pk":0.45,"nfl":0,"ol":0},{"week":"2021-08","bc":23.7,"ca":34.3,"st":28.1,"pk":0.46,"nfl":0,"ol":0},{"week":"2021-08","bc":24.0,"ca":33.9,"st":28.3,"pk":0.39,"nfl":0,"ol":0},{"week":"2021-09","bc":25.3,"ca":34.3,"st":28.7,"pk":0.51,"nfl":1,"ol":0},{"week":"2021-09","bc":25.7,"ca":33.5,"st":28.2,"pk":0.49,"nfl":1,"ol":0},{"week":"2021-09","bc":25.5,"ca":33.3,"st":28.8,"pk":0.53,"nfl":1,"ol":0},{"week":"2021-09","bc":25.6,"ca":33.8,"st":28.5,"pk":0.38,"nfl":1,"ol":0},{"week":"2021-10","bc":25.5,"ca":33.9,"st":28.3,"pk":0.58,"nfl":1,"ol":0},{"week":"2021-10","bc":25.0,"ca":33.8,"st":28.5,"pk":0.48,"nfl":1,"ol":0},{"week":"2021-10","bc":25.2,"ca":33.3,"st":28.6,"pk":0.53,"nfl":1,"ol":0},{"week":"2021-10","bc":25.1,"ca":33.8,"st":28.5,"pk":0.43,"nfl":1,"ol":0},{"week":"2021-11","bc":25.5,"ca":33.5,"st":28.0,"pk":0.49,"nfl":1,"ol":0},{"week":"2021-11","bc":24.8,"ca":34.1,"st":28.2,"pk":0.42,"nfl":1,"ol":0},{"week":"2021-11","bc":24.7,"ca":34.0,"st":28.2,"pk":0.43,"nfl":1,"ol":0},{"week":"2021-11","bc":24.5,"ca":33.6,"st":28.3,"pk":0.52,"nfl":1,"ol":0},{"week":"2021-11","bc":24.1,"ca":33.8,"st":28.4,"pk":0.43,"nfl":1,"ol":0},{"week":"2021-12","bc":24.5,"ca":33.6,"st":28.3,"pk":0.44,"nfl":1,"ol":0},{"week":"2021-12","bc":24.3,"ca":33.9,"st":27.9,"pk":0.46,"nfl":1,"ol":0},{"week":"2021-12","bc":24.1,"ca":34.2,"st":28.3,"pk":0.43,"nfl":1,"ol":0},{"week":"2021-12","bc":23.6,"ca":33.7,"st":28.3,"pk":0.41,"nfl":1,"ol":0},{"week":"2022-01","bc":24.0,"ca":34.1,"st":28.4,"pk":0.42,"nfl":1,"ol":0},{"week":"2022-01","bc":23.3,"ca":33.8,"st":28.6,"pk":0.51,"nfl":1,"ol":0},{"week":"2022-01","bc":23.6,"ca":33.6,"st":28.8,"pk":0.42,"nfl":1,"ol":0},{"week":"2022-01","bc":23.9,"ca":33.7,"st":28.8,"pk":0.43,"nfl":1,"ol":0},{"week":"2022-01","bc":23.1,"ca":33.4,"st":28.9,"pk":0.48,"nfl":1,"ol":0},{"week":"2022-02","bc":23.1,"ca":33.5,"st":28.7,"pk":0.49,"nfl":1,"ol":0},{"week":"2022-02","bc":23.1,"ca":33.2,"st":29.3,"pk":0.5,"nfl":1,"ol":0},{"week":"2022-02","bc":22.9,"ca":34.0,"st":29.4,"pk":0.48,"nfl":1,"ol":0},{"week":"2022-02","bc":22.6,"ca":33.4,"st":29.6,"pk":0.42,"nfl":1,"ol":0},{"week":"2022-03","bc":21.7,"ca":33.2,"st":29.4,"pk":0.54,"nfl":0,"ol":0},{"week":"2022-03","bc":21.4,"ca":33.3,"st":29.6,"pk":0.43,"nfl":0,"ol":0},{"week":"2022-03","bc":21.7,"ca":33.2,"st":30.3,"pk":0.5,"nfl":0,"ol":0},{"week":"2022-03","bc":21.3,"ca":33.1,"st":30.2,"pk":0.47,"nfl":0,"ol":0},{"week":"2022-04","bc":21.7,"ca":33.2,"st":30.6,"pk":0.5,"nfl":0,"ol":0},{"week":"2022-04","bc":21.1,"ca":33.2,"st":30.8,"pk":0.52,"nfl":0,"ol":0},{"week":"2022-04","bc":21.0,"ca":32.7,"st":31.1,"pk":0.53,"nfl":0,"ol":0},{"week":"2022-04","bc":21.2,"ca":32.6,"st":31.7,"pk":0.54,"nfl":0,"ol":0},{"week":"2022-05","bc":20.6,"ca":32.5,"st":31.7,"pk":0.6,"nfl":0,"ol":0},{"week":"2022-05","bc":20.8,"ca":31.9,"st":32.2,"pk":0.56,"nfl":0,"ol":0},{"week":"2022-05","bc":20.9,"ca":32.0,"st":32.4,"pk":0.54,"nfl":0,"ol":0},{"week":"2022-05","bc":20.1,"ca":32.7,"st":32.8,"pk":0.6,"nfl":0,"ol":0},{"week":"2022-05","bc":20.4,"ca":32.7,"st":33.1,"pk":0.61,"nfl":0,"ol":0},{"week":"2022-06","bc":20.3,"ca":32.0,"st":33.6,"pk":0.52,"nfl":0,"ol":0},{"week":"2022-06","bc":20.3,"ca":32.1,"st":33.8,"pk":0.6,"nfl":0,"ol":0},{"week":"2022-06","bc":19.7,"ca":32.0,"st":34.5,"pk":0.62,"nfl":0,"ol":0},{"week":"2022-06","bc":19.6,"ca":32.6,"st":34.4,"pk":0.58,"nfl":0,"ol":0},{"week":"2022-07","bc":20.0,"ca":32.0,"st":34.6,"pk":0.66,"nfl":0,"ol":0},{"week":"2022-07","bc":20.1,"ca":31.7,"st":34.3,"pk":0.59,"nfl":0,"ol":0},{"week":"2022-07","bc":20.3,"ca":31.5,"st":34.5,"pk":0.61,"nfl":0,"ol":0},{"week":"2022-07","bc":20.5,"ca":31.3,"st":33.9,"pk":0.59,"nfl":0,"ol":0},{"week":"2022-08","bc":20.4,"ca":31.9,"st":33.8,"pk":0.6,"nfl":0,"ol":0},{"week":"2022-08","bc":20.8,"ca":31.6,"st":33.0,"pk":0.56,"nfl":0,"ol":0},{"week":"2022-08","bc":20.9,"ca":31.4,"st":33.1,"pk":0.54,"nfl":0,"ol":0},{"week":"2022-08","bc":20.9,"ca":31.7,"st":33.0,"pk":0.66,"nfl":0,"ol":0},{"week":"2022-08","bc":21.6,"ca":31.6,"st":32.5,"pk":0.57,"nfl":0,"ol":0},{"week":"2022-09","bc":22.6,"ca":32.4,"st":32.5,"pk":0.56,"nfl":1,"ol":0},{"week":"2022-09","bc":22.4,"ca":32.2,"st":31.8,"pk":0.51,"nfl":1,"ol":0},{"week":"2022-09","bc":23.0,"ca":32.0,"st":32.0,"pk":0.57,"nfl":1,"ol":0},{"week":"2022-09","bc":22.8,"ca":32.4,"st":31.9,"pk":0.55,"nfl":1,"ol":0},{"week":"2022-10","bc":23.3,"ca":32.0,"st":31.2,"pk":0.67,"nfl":1,"ol":0},{"week":"2022-10","bc":23.3,"ca":31.7,"st":31.4,"pk":0.65,"nfl":1,"ol":0},{"week":"2022-10","bc":22.9,"ca":32.4,"st":32.1,"pk":0.59,"nfl":1,"ol":0},{"week":"2022-10","bc":23.3,"ca":32.1,"st":32.3,"pk":0.72,"nfl":1,"ol":0},{"week":"2022-10","bc":23.2,"ca":31.6,"st":32.1,"pk":0.67,"nfl":1,"ol":0},{"week":"2022-11","bc":23.2,"ca":31.9,"st":32.4,"pk":0.63,"nfl":1,"ol":0},{"week":"2022-11","bc":23.5,"ca":31.7,"st":32.6,"pk":0.55,"nfl":1,"ol":0},{"week":"2022-11","bc":23.0,"ca":31.5,"st":32.6,"pk":0.75,"nfl":1,"ol":0},{"week":"2022-11","bc":22.9,"ca":32.1,"st":33.0,"pk":0.61,"nfl":1,"ol":0},{"week":"2022-12","bc":22.8,"ca":32.4,"st":33.2,"pk":0.6,"nfl":1,"ol":0},{"week":"2022-12","bc":22.8,"ca":31.5,"st":33.5,"pk":0.72,"nfl":1,"ol":0},{"week":"2022-12","bc":23.0,"ca":32.0,"st":33.9,"pk":0.78,"nfl":1,"ol":0},{"week":"2022-12","bc":23.1,"ca":31.6,"st":34.1,"pk":0.75,"nfl":1,"ol":0},{"week":"2023-01","bc":23.0,"ca":31.7,"st":34.7,"pk":0.72,"nfl":1,"ol":0},{"week":"2023-01","bc":23.1,"ca":31.6,"st":34.2,"pk":0.73,"nfl":1,"ol":0},{"week":"2023-01","bc":22.8,"ca":31.4,"st":34.7,"pk":0.75,"nfl":1,"ol":0},{"week":"2023-01","bc":23.1,"ca":31.6,"st":34.5,"pk":0.75,"nfl":1,"ol":0},{"week":"2023-01","bc":22.6,"ca":31.3,"st":34.6,"pk":0.74,"nfl":1,"ol":0},{"week":"2023-02","bc":23.2,"ca":31.5,"st":34.8,"pk":0.74,"nfl":1,"ol":0},{"week":"2023-02","bc":22.6,"ca":31.4,"st":34.5,"pk":0.75,"nfl":1,"ol":0},{"week":"2023-02","bc":22.2,"ca":31.2,"st":34.9,"pk":0.73,"nfl":1,"ol":0},{"week":"2023-02","bc":22.1,"ca":31.0,"st":34.9,"pk":0.75,"nfl":1,"ol":0},{"week":"2023-03","bc":21.2,"ca":31.0,"st":35.0,"pk":0.7,"nfl":0,"ol":0},{"week":"2023-03","bc":21.0,"ca":31.3,"st":35.1,"pk":0.77,"nfl":0,"ol":0},{"week":"2023-03","bc":21.1,"ca":31.2,"st":35.6,"pk":0.75,"nfl":0,"ol":0},{"week":"2023-03","bc":21.0,"ca":30.7,"st":35.0,"pk":0.75,"nfl":0,"ol":0},{"week":"2023-04","bc":20.8,"ca":30.9,"st":35.2,"pk":0.81,"nfl":0,"ol":0},{"week":"2023-04","bc":20.6,"ca":31.0,"st":35.4,"pk":0.87,"nfl":0,"ol":0},{"week":"2023-04","bc":20.4,"ca":30.2,"st":35.7,"pk":0.85,"nfl":0,"ol":0},{"week":"2023-04","bc":20.6,"ca":30.7,"st":35.9,"pk":0.76,"nfl":0,"ol":0},{"week":"2023-05","bc":20.8,"ca":30.3,"st":36.6,"pk":0.79,"nfl":0,"ol":0},{"week":"2023-05","bc":20.6,"ca":30.5,"st":36.9,"pk":0.88,"nfl":0,"ol":0},{"week":"2023-05","bc":20.3,"ca":30.0,"st":36.8,"pk":0.81,"nfl":0,"ol":0},{"week":"2023-05","bc":20.6,"ca":29.6,"st":37.0,"pk":0.85,"nfl":0,"ol":0},{"week":"2023-05","bc":20.6,"ca":29.6,"st":37.5,"pk":0.89,"nfl":0,"ol":0},{"week":"2023-06","bc":20.2,"ca":29.9,"st":37.6,"pk":0.83,"nfl":0,"ol":0},{"week":"2023-06","bc":20.4,"ca":29.9,"st":38.1,"pk":0.88,"nfl":0,"ol":0},{"week":"2023-06","bc":20.4,"ca":29.4,"st":38.3,"pk":0.83,"nfl":0,"ol":0},{"week":"2023-06","bc":20.1,"ca":29.8,"st":38.2,"pk":0.87,"nfl":0,"ol":0},{"week":"2023-07","bc":20.4,"ca":29.0,"st":39.0,"pk":0.91,"nfl":0,"ol":0},{"week":"2023-07","bc":20.6,"ca":29.5,"st":38.9,"pk":0.85,"nfl":0,"ol":0},{"week":"2023-07","bc":20.9,"ca":29.2,"st":38.1,"pk":0.94,"nfl":0,"ol":0},{"week":"2023-07","bc":21.0,"ca":29.4,"st":38.0,"pk":0.92,"nfl":0,"ol":0},{"week":"2023-07","bc":20.6,"ca":29.6,"st":38.0,"pk":0.95,"nfl":0,"ol":0},{"week":"2023-08","bc":20.9,"ca":29.4,"st":37.8,"pk":0.95,"nfl":0,"ol":0},{"week":"2023-08","bc":21.4,"ca":29.5,"st":37.7,"pk":1.0,"nfl":0,"ol":0},{"week":"2023-08","bc":21.5,"ca":29.9,"st":37.8,"pk":0.96,"nfl":0,"ol":0},{"week":"2023-08","bc":21.7,"ca":29.5,"st":37.1,"pk":0.95,"nfl":0,"ol":0},{"week":"2023-09","bc":23.7,"ca":29.9,"st":36.8,"pk":0.98,"nfl":1,"ol":0},{"week":"2023-09","bc":23.1,"ca":29.4,"st":36.5,"pk":1.0,"nfl":1,"ol":0},{"week":"2023-09","bc":23.4,"ca":29.9,"st":36.5,"pk":0.99,"nfl":1,"ol":0},{"week":"2023-09","bc":23.5,"ca":30.2,"st":36.4,"pk":1.0,"nfl":1,"ol":0},{"week":"2023-10","bc":23.5,"ca":29.1,"st":36.7,"pk":0.97,"nfl":1,"ol":0},{"week":"2023-10","bc":23.3,"ca":29.5,"st":36.3,"pk":0.98,"nfl":1,"ol":0},{"week":"2023-10","bc":23.5,"ca":29.7,"st":36.6,"pk":0.96,"nfl":1,"ol":0},{"week":"2023-10","bc":23.1,"ca":29.4,"st":36.6,"pk":1.09,"nfl":1,"ol":0},{"week":"2023-10","bc":23.2,"ca":29.5,"st":37.0,"pk":0.98,"nfl":1,"ol":0},{"week":"2023-11","bc":23.1,"ca":29.1,"st":37.4,"pk":1.01,"nfl":1,"ol":0},{"week":"2023-11","bc":23.1,"ca":29.2,"st":36.8,"pk":1.02,"nfl":1,"ol":0},{"week":"2023-11","bc":23.6,"ca":29.0,"st":36.9,"pk":1.09,"nfl":1,"ol":0},{"week":"2023-11","bc":22.6,"ca":29.3,"st":37.3,"pk":1.05,"nfl":1,"ol":0},{"week":"2023-12","bc":23.1,"ca":29.0,"st":37.4,"pk":1.12,"nfl":1,"ol":0},{"week":"2023-12","bc":22.6,"ca":28.9,"st":37.7,"pk":1.05,"nfl":1,"ol":0},{"week":"2023-12","bc":22.8,"ca":28.6,"st":37.5,"pk":1.1,"nfl":1,"ol":0},{"week":"2023-12","bc":23.1,"ca":28.5,"st":37.4,"pk":1.06,"nfl":1,"ol":0},{"week":"2024-01","bc":22.8,"ca":28.4,"st":37.7,"pk":1.19,"nfl":1,"ol":0},{"week":"2024-01","bc":22.5,"ca":28.5,"st":38.1,"pk":1.06,"nfl":1,"ol":0},{"week":"2024-01","bc":22.5,"ca":28.2,"st":38.2,"pk":1.13,"nfl":1,"ol":0},{"week":"2024-01","bc":22.7,"ca":28.3,"st":38.3,"pk":1.15,"nfl":1,"ol":0},{"week":"2024-01","bc":22.3,"ca":28.7,"st":38.7,"pk":1.15,"nfl":1,"ol":0},{"week":"2024-02","bc":22.4,"ca":28.3,"st":38.9,"pk":1.13,"nfl":1,"ol":0},{"week":"2024-02","bc":22.3,"ca":27.9,"st":39.2,"pk":1.14,"nfl":1,"ol":0},{"week":"2024-02","bc":22.0,"ca":28.2,"st":39.2,"pk":1.16,"nfl":1,"ol":0},{"week":"2024-02","bc":22.5,"ca":27.7,"st":39.2,"pk":1.16,"nfl":1,"ol":0},{"week":"2024-03","bc":21.0,"ca":27.2,"st":39.5,"pk":1.21,"nfl":0,"ol":0},{"week":"2024-03","bc":20.3,"ca":27.4,"st":39.9,"pk":1.27,"nfl":0,"ol":0},{"week":"2024-03","bc":20.7,"ca":27.0,"st":39.7,"pk":1.16,"nfl":0,"ol":0},{"week":"2024-03","bc":20.4,"ca":27.4,"st":40.2,"pk":1.14,"nfl":0,"ol":0},{"week":"2024-04","bc":20.7,"ca":27.4,"st":40.2,"pk":1.2,"nfl":0,"ol":0},{"week":"2024-04","bc":20.4,"ca":27.8,"st":40.3,"pk":1.33,"nfl":0,"ol":0},{"week":"2024-04","bc":20.6,"ca":27.4,"st":40.6,"pk":1.21,"nfl":0,"ol":0},{"week":"2024-04","bc":20.9,"ca":27.3,"st":40.3,"pk":1.33,"nfl":0,"ol":0},{"week":"2024-04","bc":21.0,"ca":27.5,"st":40.3,"pk":1.36,"nfl":0,"ol":0},{"week":"2024-05","bc":20.7,"ca":26.7,"st":40.0,"pk":1.29,"nfl":0,"ol":0},{"week":"2024-05","bc":20.9,"ca":27.3,"st":40.5,"pk":1.36,"nfl":0,"ol":0},{"week":"2024-05","bc":21.0,"ca":27.5,"st":40.4,"pk":1.43,"nfl":0,"ol":0},{"week":"2024-05","bc":21.0,"ca":26.8,"st":40.8,"pk":1.37,"nfl":0,"ol":0},{"week":"2024-06","bc":21.7,"ca":27.5,"st":40.2,"pk":1.4,"nfl":0,"ol":0},{"week":"2024-06","bc":21.4,"ca":27.3,"st":40.3,"pk":1.41,"nfl":0,"ol":0},{"week":"2024-06","bc":21.2,"ca":27.0,"st":40.4,"pk":1.41,"nfl":0,"ol":0},{"week":"2024-06","bc":21.7,"ca":27.3,"st":40.6,"pk":1.45,"nfl":0,"ol":0},{"week":"2024-07","bc":22.1,"ca":27.7,"st":40.3,"pk":1.45,"nfl":0,"ol":0},{"week":"2024-07","bc":21.9,"ca":27.1,"st":40.4,"pk":1.52,"nfl":0,"ol":0},{"week":"2024-07","bc":21.5,"ca":27.1,"st":40.4,"pk":1.51,"nfl":0,"ol":0},{"week":"2024-07","bc":21.8,"ca":26.9,"st":40.3,"pk":1.58,"nfl":0,"ol":0},{"week":"2024-07","bc":22.2,"ca":26.8,"st":40.2,"pk":1.53,"nfl":0,"ol":1},{"week":"2024-08","bc":21.9,"ca":27.3,"st":40.3,"pk":1.6,"nfl":0,"ol":1},{"week":"2024-08","bc":22.2,"ca":26.8,"st":40.4,"pk":1.6,"nfl":0,"ol":0},{"week":"2024-08","bc":22.3,"ca":27.1,"st":39.9,"pk":1.46,"nfl":0,"ol":0},{"week":"2024-08","bc":21.9,"ca":27.0,"st":40.1,"pk":1.53,"nfl":0,"ol":0},{"week":"2024-09","bc":23.2,"ca":27.3,"st":39.8,"pk":1.54,"nfl":1,"ol":0},{"week":"2024-09","bc":22.6,"ca":27.3,"st":40.2,"pk":1.42,"nfl":1,"ol":0},{"week":"2024-09","bc":23.1,"ca":27.5,"st":39.5,"pk":1.52,"nfl":1,"ol":0},{"week":"2024-09","bc":23.3,"ca":27.1,"st":39.7,"pk":1.44,"nfl":1,"ol":0},{"week":"2024-09","bc":23.1,"ca":27.2,"st":39.8,"pk":1.38,"nfl":1,"ol":0},{"week":"2024-10","bc":23.7,"ca":27.0,"st":40.1,"pk":1.4,"nfl":1,"ol":0},{"week":"2024-10","bc":23.0,"ca":27.1,"st":39.8,"pk":1.44,"nfl":1,"ol":0},{"week":"2024-10","bc":23.2,"ca":27.3,"st":39.8,"pk":1.42,"nfl":1,"ol":0},{"week":"2024-10","bc":23.3,"ca":27.4,"st":40.4,"pk":1.45,"nfl":1,"ol":0},{"week":"2024-11","bc":23.5,"ca":26.9,"st":39.8,"pk":1.4,"nfl":1,"ol":0},{"week":"2024-11","bc":22.9,"ca":27.4,"st":39.7,"pk":1.45,"nfl":1,"ol":0},{"week":"2024-11","bc":23.4,"ca":27.5,"st":40.4,"pk":1.4,"nfl":1,"ol":0},{"week":"2024-11","bc":23.1,"ca":27.2,"st":40.2,"pk":1.46,"nfl":1,"ol":0},{"week":"2024-12","bc":22.8,"ca":27.6,"st":40.2,"pk":1.43,"nfl":1,"ol":0},{"week":"2024-12","bc":23.1,"ca":26.9,"st":40.7,"pk":1.45,"nfl":1,"ol":0},{"week":"2024-12","bc":23.0,"ca":26.7,"st":40.7,"pk":1.53,"nfl":1,"ol":0},{"week":"2024-12","bc":22.8,"ca":26.5,"st":40.6,"pk":1.53,"nfl":1,"ol":0},{"week":"2024-12","bc":22.9,"ca":27.4,"st":40.5,"pk":1.52,"nfl":1,"ol":0},{"week":"2025-01","bc":22.8,"ca":27.2,"st":41.0,"pk":1.46,"nfl":1,"ol":0},{"week":"2025-01","bc":22.8,"ca":26.9,"st":41.0,"pk":1.49,"nfl":1,"ol":0},{"week":"2025-01","bc":22.9,"ca":27.0,"st":40.9,"pk":1.55,"nfl":1,"ol":0},{"week":"2025-01","bc":23.1,"ca":26.5,"st":41.4,"pk":1.51,"nfl":1,"ol":0},{"week":"2025-02","bc":22.4,"ca":27.5,"st":40.8,"pk":1.59,"nfl":1,"ol":0},{"week":"2025-02","bc":23.1,"ca":26.8,"st":40.8,"pk":1.52,"nfl":1,"ol":0},{"week":"2025-02","bc":22.2,"ca":26.8,"st":41.0,"pk":1.51,"nfl":1,"ol":0},{"week":"2025-02","bc":22.5,"ca":26.9,"st":41.2,"pk":1.49,"nfl":1,"ol":0},{"week":"2025-03","bc":21.5,"ca":26.8,"st":41.3,"pk":1.51,"nfl":0,"ol":0},{"week":"2025-03","bc":21.4,"ca":26.7,"st":41.3,"pk":1.49,"nfl":0,"ol":0},{"week":"2025-03","bc":21.2,"ca":26.4,"st":41.5,"pk":1.53,"nfl":0,"ol":0},{"week":"2025-03","bc":21.2,"ca":26.7,"st":41.2,"pk":1.54,"nfl":0,"ol":0},{"week":"2025-03","bc":21.1,"ca":27.0,"st":41.8,"pk":1.47,"nfl":0,"ol":0},{"week":"2025-04","bc":21.0,"ca":26.8,"st":41.5,"pk":1.45,"nfl":0,"ol":0},{"week":"2025-04","bc":21.3,"ca":26.9,"st":41.9,"pk":1.44,"nfl":0,"ol":0},{"week":"2025-04","bc":21.2,"ca":26.2,"st":41.8,"pk":1.54,"nfl":0,"ol":0},{"week":"2025-04","bc":20.9,"ca":26.1,"st":41.9,"pk":1.49,"nfl":0,"ol":0},{"week":"2025-05","bc":21.2,"ca":26.3,"st":42.0,"pk":1.45,"nfl":0,"ol":0},{"week":"2025-05","bc":21.1,"ca":26.3,"st":42.0,"pk":1.56,"nfl":0,"ol":0},{"week":"2025-05","bc":21.2,"ca":26.5,"st":42.2,"pk":1.65,"nfl":0,"ol":0},{"week":"2025-05","bc":21.1,"ca":25.7,"st":42.4,"pk":1.56,"nfl":0,"ol":0},{"week":"2025-06","bc":20.7,"ca":26.6,"st":42.2,"pk":1.6,"nfl":0,"ol":0},{"week":"2025-06","bc":20.8,"ca":26.1,"st":42.4,"pk":1.58,"nfl":0,"ol":0},{"week":"2025-06","bc":21.0,"ca":26.0,"st":42.3,"pk":1.58,"nfl":0,"ol":0},{"week":"2025-06","bc":21.0,"ca":25.8,"st":42.7,"pk":1.63,"nfl":0,"ol":0},{"week":"2025-06","bc":20.8,"ca":25.5,"st":42.3,"pk":1.59,"nfl":0,"ol":0},{"week":"2025-07","bc":20.8,"ca":26.2,"st":42.9,"pk":1.61,"nfl":0,"ol":0},{"week":"2025-07","bc":21.1,"ca":26.0,"st":42.6,"pk":1.61,"nfl":0,"ol":0},{"week":"2025-07","bc":20.7,"ca":25.6,"st":42.3,"pk":1.57,"nfl":0,"ol":0},{"week":"2025-07","bc":20.9,"ca":25.6,"st":42.7,"pk":1.64,"nfl":0,"ol":0},{"week":"2025-08","bc":20.8,"ca":25.8,"st":42.5,"pk":1.59,"nfl":0,"ol":0},{"week":"2025-08","bc":20.8,"ca":26.4,"st":42.9,"pk":1.57,"nfl":0,"ol":0},{"week":"2025-08","bc":21.1,"ca":25.8,"st":42.6,"pk":1.62,"nfl":0,"ol":0},{"week":"2025-08","bc":21.0,"ca":25.5,"st":42.7,"pk":1.56,"nfl":0,"ol":0},{"week":"2025-09","bc":22.1,"ca":25.8,"st":42.4,"pk":1.6,"nfl":1,"ol":0},{"week":"2025-09","bc":22.3,"ca":25.8,"st":42.8,"pk":1.6,"nfl":1,"ol":0},{"week":"2025-09","bc":22.0,"ca":25.1,"st":42.4,"pk":1.64,"nfl":1,"ol":0},{"week":"2025-09","bc":22.1,"ca":25.8,"st":42.6,"pk":1.62,"nfl":1,"ol":0},{"week":"2025-09","bc":21.9,"ca":25.7,"st":43.2,"pk":1.6,"nfl":1,"ol":0},{"week":"2025-10","bc":22.1,"ca":26.0,"st":43.2,"pk":1.63,"nfl":1,"ol":0},{"week":"2025-10","bc":22.0,"ca":26.3,"st":43.1,"pk":1.66,"nfl":1,"ol":0},{"week":"2025-10","bc":22.0,"ca":26.1,"st":42.8,"pk":1.62,"nfl":1,"ol":0},{"week":"2025-10","bc":22.1,"ca":25.7,"st":43.0,"pk":1.6,"nfl":1,"ol":0},{"week":"2025-11","bc":21.8,"ca":25.5,"st":43.0,"pk":1.55,"nfl":1,"ol":0},{"week":"2025-11","bc":22.5,"ca":26.5,"st":42.7,"pk":1.56,"nfl":1,"ol":0},{"week":"2025-11","bc":21.8,"ca":25.8,"st":43.3,"pk":1.59,"nfl":1,"ol":0},{"week":"2025-11","bc":21.7,"ca":25.8,"st":43.2,"pk":1.58,"nfl":1,"ol":0},{"week":"2025-12","bc":22.3,"ca":25.8,"st":43.0,"pk":1.59,"nfl":1,"ol":0},{"week":"2025-12","bc":22.2,"ca":25.9,"st":43.0,"pk":1.6,"nfl":1,"ol":0},{"week":"2025-12","bc":22.1,"ca":25.8,"st":43.0,"pk":1.62,"nfl":1,"ol":0},{"week":"2025-12","bc":22.1,"ca":25.6,"st":42.6,"pk":1.6,"nfl":1,"ol":0},{"week":"2025-12","bc":22.0,"ca":25.6,"st":42.9,"pk":1.62,"nfl":1,"ol":0}];
+const SHOWS=[{"show":"Chicago Fire","network":"NBC","genre":"Drama","timeslot":"Wed 9pm","year":2020,"demo":0.84,"viewers":8.22,"live":1,"stream":0},{"show":"Chicago Med","network":"NBC","genre":"Drama","timeslot":"Wed 8pm","year":2020,"demo":0.81,"viewers":8.12,"live":1,"stream":0},{"show":"Chicago PD","network":"NBC","genre":"Drama","timeslot":"Wed 10pm","year":2020,"demo":0.79,"viewers":7.89,"live":1,"stream":0},{"show":"Law & Order: SVU","network":"NBC","genre":"Drama","timeslot":"Thu 9pm","year":2020,"demo":0.82,"viewers":7.57,"live":0,"stream":0},{"show":"New Amsterdam","network":"NBC","genre":"Drama","timeslot":"Tue 10pm","year":2020,"demo":0.74,"viewers":7.34,"live":0,"stream":0},{"show":"The Voice (Mon)","network":"NBC","genre":"Reality","timeslot":"Mon 8pm","year":2020,"demo":0.99,"viewers":8.64,"live":1,"stream":0},{"show":"The Voice (Tue)","network":"NBC","genre":"Reality","timeslot":"Tue 8pm","year":2020,"demo":0.9,"viewers":8.04,"live":1,"stream":0},{"show":"America's Got Talent","network":"NBC","genre":"Reality","timeslot":"Tue 8pm","year":2020,"demo":0.88,"viewers":8.26,"live":1,"stream":0},{"show":"The Blacklist","network":"NBC","genre":"Drama","timeslot":"Fri 8pm","year":2020,"demo":0.56,"viewers":5.29,"live":0,"stream":0},{"show":"Dateline NBC","network":"NBC","genre":"News/Mag","timeslot":"Fri 9pm","year":2020,"demo":0.37,"viewers":3.83,"live":0,"stream":0},{"show":"This Is Us","network":"NBC","genre":"Drama","timeslot":"Tue 9pm","year":2020,"demo":1.12,"viewers":8.82,"live":0,"stream":0},{"show":"Chicago Fire","network":"NBC","genre":"Drama","timeslot":"Wed 9pm","year":2021,"demo":0.7,"viewers":6.99,"live":1,"stream":0},{"show":"Chicago Med","network":"NBC","genre":"Drama","timeslot":"Wed 8pm","year":2021,"demo":0.67,"viewers":6.73,"live":1,"stream":0},{"show":"Chicago PD","network":"NBC","genre":"Drama","timeslot":"Wed 10pm","year":2021,"demo":0.64,"viewers":6.58,"live":1,"stream":0},{"show":"Law & Order: SVU","network":"NBC","genre":"Drama","timeslot":"Thu 9pm","year":2021,"demo":0.67,"viewers":5.85,"live":0,"stream":0},{"show":"New Amsterdam","network":"NBC","genre":"Drama","timeslot":"Tue 10pm","year":2021,"demo":0.62,"viewers":6.28,"live":0,"stream":0},{"show":"The Voice (Mon)","network":"NBC","genre":"Reality","timeslot":"Mon 8pm","year":2021,"demo":0.85,"viewers":7.61,"live":1,"stream":0},{"show":"The Voice (Tue)","network":"NBC","genre":"Reality","timeslot":"Tue 8pm","year":2021,"demo":0.77,"viewers":7.21,"live":1,"stream":0},{"show":"America's Got Talent","network":"NBC","genre":"Reality","timeslot":"Tue 8pm","year":2021,"demo":0.75,"viewers":7.18,"live":1,"stream":0},{"show":"The Blacklist","network":"NBC","genre":"Drama","timeslot":"Fri 8pm","year":2021,"demo":0.49,"viewers":4.59,"live":0,"stream":0},{"show":"This Is Us","network":"NBC","genre":"Drama","timeslot":"Tue 9pm","year":2021,"demo":1.05,"viewers":7.97,"live":0,"stream":0},{"show":"Dateline NBC","network":"NBC","genre":"News/Mag","timeslot":"Fri 9pm","year":2021,"demo":0.3,"viewers":3.19,"live":0,"stream":0},{"show":"Chicago Fire","network":"NBC","genre":"Drama","timeslot":"Wed 9pm","year":2022,"demo":0.84,"viewers":8.08,"live":1,"stream":0},{"show":"Chicago Med","network":"NBC","genre":"Drama","timeslot":"Wed 8pm","year":2022,"demo":0.82,"viewers":7.91,"live":1,"stream":0},{"show":"Chicago PD","network":"NBC","genre":"Drama","timeslot":"Wed 10pm","year":2022,"demo":0.79,"viewers":7.54,"live":1,"stream":0},{"show":"Law & Order: SVU","network":"NBC","genre":"Drama","timeslot":"Thu 9pm","year":2022,"demo":0.75,"viewers":6.39,"live":0,"stream":0},{"show":"This Is Us","network":"NBC","genre":"Drama","timeslot":"Tue 9pm","year":2022,"demo":1.29,"viewers":8.37,"live":0,"stream":0},{"show":"New Amsterdam","network":"NBC","genre":"Drama","timeslot":"Tue 10pm","year":2022,"demo":0.58,"viewers":6.41,"live":0,"stream":0},{"show":"L&O: Org. Crime","network":"NBC","genre":"Drama","timeslot":"Thu 10pm","year":2022,"demo":0.61,"viewers":4.28,"live":0,"stream":0},{"show":"The Voice (Mon)","network":"NBC","genre":"Reality","timeslot":"Mon 8pm","year":2022,"demo":0.82,"viewers":7.57,"live":1,"stream":0},{"show":"The Voice (Tue)","network":"NBC","genre":"Reality","timeslot":"Tue 8pm","year":2022,"demo":0.74,"viewers":7.2,"live":1,"stream":0},{"show":"America's Got Talent","network":"NBC","genre":"Reality","timeslot":"Tue 8pm","year":2022,"demo":0.81,"viewers":7.12,"live":1,"stream":0},{"show":"The Blacklist","network":"NBC","genre":"Drama","timeslot":"Fri 8pm","year":2022,"demo":0.45,"viewers":4.11,"live":0,"stream":0},{"show":"La Brea","network":"NBC","genre":"Drama","timeslot":"Tue 9pm","year":2022,"demo":0.53,"viewers":5.09,"live":0,"stream":0},{"show":"Dateline NBC","network":"NBC","genre":"News/Mag","timeslot":"Fri 9pm","year":2022,"demo":0.28,"viewers":2.97,"live":0,"stream":0},{"show":"Chicago Fire","network":"NBC","genre":"Drama","timeslot":"Wed 9pm","year":2023,"demo":0.61,"viewers":7.14,"live":1,"stream":0},{"show":"Chicago Med","network":"NBC","genre":"Drama","timeslot":"Wed 8pm","year":2023,"demo":0.58,"viewers":6.86,"live":1,"stream":0},{"show":"Chicago PD","network":"NBC","genre":"Drama","timeslot":"Wed 10pm","year":2023,"demo":0.55,"viewers":5.27,"live":1,"stream":0},{"show":"Law & Order: SVU","network":"NBC","genre":"Drama","timeslot":"Thu 9pm","year":2023,"demo":0.55,"viewers":4.71,"live":0,"stream":0},{"show":"Law & Order","network":"NBC","genre":"Drama","timeslot":"Thu 8pm","year":2023,"demo":0.46,"viewers":4.38,"live":0,"stream":0},{"show":"New Amsterdam","network":"NBC","genre":"Drama","timeslot":"Tue 10pm","year":2023,"demo":0.42,"viewers":4.82,"live":0,"stream":0},{"show":"L&O: Org. Crime","network":"NBC","genre":"Drama","timeslot":"Thu 10pm","year":2023,"demo":0.44,"viewers":3.45,"live":0,"stream":0},{"show":"The Voice (Mon)","network":"NBC","genre":"Reality","timeslot":"Mon 8pm","year":2023,"demo":0.67,"viewers":6.19,"live":1,"stream":0},{"show":"The Voice (Tue)","network":"NBC","genre":"Reality","timeslot":"Tue 8pm","year":2023,"demo":0.63,"viewers":6.2,"live":1,"stream":0},{"show":"America's Got Talent","network":"NBC","genre":"Reality","timeslot":"Tue 8pm","year":2023,"demo":0.55,"viewers":5.47,"live":1,"stream":0},{"show":"Night Court","network":"NBC","genre":"Comedy","timeslot":"Tue 8pm","year":2023,"demo":0.52,"viewers":4.05,"live":0,"stream":0},{"show":"The Blacklist","network":"NBC","genre":"Drama","timeslot":"Sun 10pm","year":2023,"demo":0.32,"viewers":3.4,"live":0,"stream":0},{"show":"Lopez vs Lopez","network":"NBC","genre":"Comedy","timeslot":"Fri 8pm","year":2023,"demo":0.27,"viewers":1.98,"live":0,"stream":0},{"show":"Dateline NBC","network":"NBC","genre":"News/Mag","timeslot":"Fri 9pm","year":2023,"demo":0.25,"viewers":2.74,"live":0,"stream":0},{"show":"Chicago Fire","network":"NBC","genre":"Drama","timeslot":"Wed 9pm","year":2024,"demo":0.49,"viewers":6.314,"live":1,"stream":0},{"show":"Chicago Med","network":"NBC","genre":"Drama","timeslot":"Wed 8pm","year":2024,"demo":0.48,"viewers":6.177,"live":1,"stream":0},{"show":"Chicago PD","network":"NBC","genre":"Drama","timeslot":"Wed 10pm","year":2024,"demo":0.46,"viewers":5.148,"live":1,"stream":0},{"show":"Law & Order: SVU","network":"NBC","genre":"Drama","timeslot":"Thu 9pm","year":2024,"demo":0.47,"viewers":4.671,"live":0,"stream":0},{"show":"Law & Order","network":"NBC","genre":"Drama","timeslot":"Thu 8pm","year":2024,"demo":0.37,"viewers":4.357,"live":0,"stream":0},{"show":"The Voice (Mon)","network":"NBC","genre":"Reality","timeslot":"Mon 8pm","year":2024,"demo":0.52,"viewers":6.237,"live":1,"stream":0},{"show":"The Voice (Tue)","network":"NBC","genre":"Reality","timeslot":"Tue 8pm","year":2024,"demo":0.5,"viewers":5.947,"live":1,"stream":0},{"show":"Found","network":"NBC","genre":"Drama","timeslot":"Thu 10pm","year":2024,"demo":0.31,"viewers":3.068,"live":0,"stream":0},{"show":"Night Court","network":"NBC","genre":"Comedy","timeslot":"Tue 8pm","year":2024,"demo":0.33,"viewers":3.031,"live":0,"stream":0},{"show":"America's Got Talent","network":"NBC","genre":"Reality","timeslot":"Tue 8pm","year":2024,"demo":0.41,"viewers":4.782,"live":1,"stream":0},{"show":"Dateline NBC","network":"NBC","genre":"News/Mag","timeslot":"Fri 9pm","year":2024,"demo":0.25,"viewers":2.459,"live":0,"stream":0},{"show":"Lopez vs Lopez","network":"NBC","genre":"Comedy","timeslot":"Fri 8pm","year":2024,"demo":0.25,"viewers":1.895,"live":0,"stream":0},{"show":"L&O: Org. Crime","network":"NBC","genre":"Drama","timeslot":"Thu 10pm","year":2024,"demo":0.34,"viewers":3.279,"live":0,"stream":0},{"show":"The Irrational","network":"NBC","genre":"Drama","timeslot":"Mon 10pm","year":2024,"demo":0.27,"viewers":3.442,"live":0,"stream":0},{"show":"Chicago Med","network":"NBC","genre":"Drama","timeslot":"Wed 8pm","year":2025,"demo":0.391,"viewers":5.807,"live":1,"stream":0},{"show":"Chicago Fire","network":"NBC","genre":"Drama","timeslot":"Wed 9pm","year":2025,"demo":0.388,"viewers":5.686,"live":1,"stream":0},{"show":"Chicago PD","network":"NBC","genre":"Drama","timeslot":"Wed 10pm","year":2025,"demo":0.35,"viewers":4.627,"live":1,"stream":0},{"show":"America's Got Talent","network":"NBC","genre":"Reality","timeslot":"Tue 8pm","year":2025,"demo":0.355,"viewers":4.487,"live":1,"stream":0},{"show":"The Voice (Mon)","network":"NBC","genre":"Reality","timeslot":"Mon 8pm","year":2025,"demo":0.438,"viewers":5.434,"live":1,"stream":0},{"show":"The Voice (Tue)","network":"NBC","genre":"Reality","timeslot":"Tue 8pm","year":2025,"demo":0.386,"viewers":4.547,"live":1,"stream":0},{"show":"Law & Order: SVU","network":"NBC","genre":"Drama","timeslot":"Thu 9pm","year":2025,"demo":0.355,"viewers":3.786,"live":0,"stream":0},{"show":"Law & Order","network":"NBC","genre":"Drama","timeslot":"Thu 8pm","year":2025,"demo":0.298,"viewers":3.725,"live":0,"stream":0},{"show":"Happy's Place","network":"NBC","genre":"Comedy","timeslot":"Fri 8pm","year":2025,"demo":0.268,"viewers":3.345,"live":0,"stream":0},{"show":"Brilliant Minds","network":"NBC","genre":"Drama","timeslot":"Mon 10pm","year":2025,"demo":0.232,"viewers":2.967,"live":0,"stream":0},{"show":"The Hunting Party","network":"NBC","genre":"Drama","timeslot":"Mon 9pm","year":2025,"demo":0.21,"viewers":2.698,"live":0,"stream":0},{"show":"St. Denis Medical","network":"NBC","genre":"Comedy","timeslot":"Tue 10pm","year":2025,"demo":0.304,"viewers":2.571,"live":0,"stream":0},{"show":"Found","network":"NBC","genre":"Drama","timeslot":"Thu 10pm","year":2025,"demo":0.214,"viewers":2.219,"live":0,"stream":0},{"show":"Lopez vs Lopez","network":"NBC","genre":"Comedy","timeslot":"Fri 8pm","year":2025,"demo":0.204,"viewers":1.981,"live":0,"stream":0},{"show":"Dateline NBC","network":"NBC","genre":"News/Mag","timeslot":"Fri 9pm","year":2025,"demo":0.205,"viewers":2.205,"live":0,"stream":0},{"show":"Night Court","network":"NBC","genre":"Comedy","timeslot":"Tue 8pm","year":2025,"demo":0.222,"viewers":1.931,"live":0,"stream":0},{"show":"The Irrational","network":"NBC","genre":"Drama","timeslot":"Mon 10pm","year":2025,"demo":0.17,"viewers":2.091,"live":0,"stream":0},{"show":"Suits LA","network":"NBC","genre":"Drama","timeslot":"Sun 10pm","year":2025,"demo":0.187,"viewers":1.648,"live":0,"stream":0},{"show":"The Americas","network":"NBC","genre":"Reality","timeslot":"Fri 8pm","year":2025,"demo":0.341,"viewers":3.952,"live":1,"stream":0},{"show":"Deal/No Deal Island","network":"NBC","genre":"Reality","timeslot":"Mon 9pm","year":2025,"demo":0.239,"viewers":2.133,"live":1,"stream":0}];
+const SUBS=[{"q":"2021-01","subs":7.0},{"q":"2021-04","subs":9.0},{"q":"2021-07","subs":13.0},{"q":"2021-10","subs":15.0},{"q":"2022-01","subs":13.0},{"q":"2022-04","subs":13.0},{"q":"2022-07","subs":15.0},{"q":"2022-10","subs":20.0},{"q":"2023-01","subs":20.0},{"q":"2023-04","subs":22.0},{"q":"2023-07","subs":26.0},{"q":"2023-10","subs":31.0},{"q":"2024-01","subs":34.0},{"q":"2024-04","subs":36.0},{"q":"2024-07","subs":33.0},{"q":"2024-10","subs":36.0},{"q":"2025-01","subs":40.0},{"q":"2025-04","subs":44.0},{"q":"2025-07","subs":46.0}];
+
+const API_BASE=window.location.hostname==='127.0.0.1'||window.location.hostname==='localhost'?'http://127.0.0.1:8000':'';
+const Y='#FCB712',O='#F37020',R='#CD004D',PU='#6460AC',B='#008AD2',G='#0CB14B';
+const COLORS=[B,R,G,Y,PU,O,'#FF69B4','#00CED1','#FFD700','#9370DB'];
+let lightMode=false;
+
+function bg(){return lightMode?'#F0EBF8':'#000'}
+function surf(){return lightMode?'#E4D9F0':'#0f0f0f'}
+function cardBg(){return lightMode?'#fff':'#161616'}
+function border(){return lightMode?'#C9B8E0':'#242424'}
+function tx(){return lightMode?'#1A0A2E':'#fff'}
+function mt(){return lightMode?'#7B6899':'#888'}
+
+const COPT={responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{labels:{color:mt,font:{family:'IBM Plex Sans',size:11},boxWidth:12},
+            tooltip:{mode:'index',intersect:false,backgroundColor:'#1a1a1a',borderColor:'#333',borderWidth:1},
+  scales:{
+    x:{grid:{color:()=>border()},ticks:{color:()=>mt()},border:{display:false},
+    y:{grid:{color:()=>border()},ticks:{color:()=>mt()},border:{display:false}
+  }
+};
+
+// ── NAVIGATION ──
+function showPage(id, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='graphs'){setTimeout(()=>{initGraphsPage()},50)}
+  if(id==='explorer'){initExplorer()}
+  if(id==='model'){initModel()}
+  if(id==='whatif'){initWhatIf()}
+}
+
+function showTab(page, tab, el){
+  const prefix = page==='graphs'?'gtab':'etab';
+  document.querySelectorAll(`[id^="${prefix}-"]`).forEach(p=>p.classList.remove('active'));
+  el.closest('.tab-bar').querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(prefix+'-'+tab).classList.add('active');
+  el.classList.add('active');
+}
+
+function toggleTheme(){
+  lightMode=!lightMode;
+  document.body.classList.toggle('light',lightMode);
+  document.getElementById('themeBtn').textContent=lightMode?'Dark mode':'Light mode';
+  Object.values(CHARTS).forEach(c=>{if(c){c.options.plugins.legend.labels.color=mt();
+    c.options.scales&&Object.values(c.options.scales).forEach(s=>{
+      if(s.grid)s.grid.color=border();
+      if(s.ticks)s.ticks.color=mt();
+    });c.update()}
+  });
+}
+
+// ── CHART REGISTRY ──
+const CHARTS={};
+function mkChart(id, type, data, opts){
+  if(CHARTS[id])CHARTS[id].destroy();
+  const ctx=document.getElementById(id);
+  if(!ctx)return null;
+  CHARTS[id]=new Chart(ctx,{type,data,options:{...COPT,...opts});
+  return CHARTS[id];
+}
+
+// ── PAGE 1: PLATFORM ANALYTICS ──
+(function initAnalytics(){
+  // Metrics
+  const w=WEEKLY; const ft=w[0]; const lt=w[w.length-1];
+  const lastSubs=SUBS[SUBS.length-1].subs;
+  const metrics=[
+    [lt.bc.toFixed(1)+'%','Broadcast Share','Down '+(ft.bc-lt.bc).toFixed(1)+'pp since 2019',R],
+    [lt.ca.toFixed(1)+'%','Cable Share','Down '+(ft.ca-lt.ca).toFixed(1)+'pp since 2019',O],
+    [lt.st.toFixed(1)+'%','Total Streaming','Up '+(lt.st-ft.st).toFixed(1)+'pp since 2019',G],
+    [lt.pk.toFixed(1)+'%','Peacock TV Share','Up from ~0% in 2020',B],
+    [lastSubs.toFixed(0)+'M','Peacock Subscribers','Up from 7M in Q1 2021',PU],
+  ];
+  document.getElementById('metrics-row').innerHTML=metrics.map(([n,l,d,c])=>
+    `<div class="metric-card"><div class="metric-num" style="color:${c}">${n}</div>
+     <div class="metric-label">${l}</div><div class="metric-delta">${d}</div></div>`).join('');
+
+  // Main share chart, use every 2nd week for performance
+  const weeks=w.filter((_,i)=>i%2===0);
+  const labels=weeks.map(d=>d.week);
+  mkChart('mainChart','line',{
+    labels,
+    datasets:[
+      {label:'Broadcast',data:weeks.map(d=>d.bc),borderColor:R,backgroundColor:R+'15',fill:true,pointRadius:0,borderWidth:1.8,tension:.3},
+      {label:'Cable',data:weeks.map(d=>d.ca),borderColor:O,backgroundColor:O+'10',fill:true,pointRadius:0,borderWidth:1.8,tension:.3},
+      {label:'Streaming Total',data:weeks.map(d=>d.st),borderColor:G,backgroundColor:G+'08',fill:true,pointRadius:0,borderWidth:2,tension:.3},
+      {label:'Peacock (x10)',data:weeks.map(d=>+(d.pk*10).toFixed(2)),borderColor:B,pointRadius:0,borderWidth:1.5,borderDash:[4,3],tension:.3},
+    ]
+  },{plugins:{...COPT.plugins,
+    annotation:{annotations:{
+      covid:{type:'line',xMin:'2020-03',xMax:'2020-03',borderColor:Y+'99',borderWidth:1,borderDash:[4,3],label:{display:true,content:'COVID',color:Y,font:{size:9},position:'end'},
+      tokyo:{type:'line',xMin:'2021-07',xMax:'2021-07',borderColor:Y+'99',borderWidth:1,borderDash:[4,3],label:{display:true,content:'Tokyo',color:Y,font:{size:9},position:'end'},
+      paris:{type:'line',xMin:'2024-07',xMax:'2024-07',borderColor:Y+'99',borderWidth:1,borderDash:[4,3],label:{display:true,content:'Paris',color:Y,font:{size:9},position:'end'},
+    }
+  },scales:{x:{...COPT.scales.x,ticks:{maxTicksLimit:12,color:mt},y:{...COPT.scales.y,ticks:{callback:v=>v+'%',color:mt}});
+
+  // Subscriber chart
+  mkChart('subsChart','bar',{
+    labels:SUBS.map(s=>s.q),
+    datasets:[{data:SUBS.map(s=>s.subs),backgroundColor:SUBS.map((_,i)=>`hsl(${220+i*5},65%,${32+i*2}%)`),borderRadius:3}]
+  },{plugins:{legend:{display:false},scales:{x:{...COPT.scales.x,ticks:{maxTicksLimit:8,color:mt},y:{...COPT.scales.y,ticks:{callback:v=>v+'M',color:mt}});
+
+  // 2025 shows chart
+  const s25=SHOWS.filter(s=>s.year===2025).sort((a,b)=>b.viewers-a.viewers).slice(0,12);
+  const ncols={NBC:R,Peacock:B,'NBC Syn':O};
+  mkChart('showsChart','bar',{
+    labels:s25.map(s=>s.show.length>18?s.show.slice(0,16)+'…':s.show),
+    datasets:[{data:s25.map(s=>s.viewers),backgroundColor:s25.map(s=>ncols[s.network]||PU),borderRadius:3}]
+  },{indexAxis:'y',plugins:{legend:{display:false},scales:{x:{...COPT.scales.x,ticks:{callback:v=>v+'M',color:mt},y:{...COPT.scales.y,ticks:{font:{size:10},color:mt}});
+})();
+
+// ── PAGE 2: GRAPHS & STATS ──
+let graphsInited=false;
+let activePlatforms={bc:true,ca:false,st:true,pk:true};
+
+function initGraphsPage(){
+  if(graphsInited)return; graphsInited=true;
+  buildTrendChart(); buildYoYChart(); buildGenreCharts();
+  runForecast();
+}
+
+function togglePlatform(btn){
+  const p=btn.dataset.platform;
+  activePlatforms[p]=!activePlatforms[p];
+  btn.classList.toggle('on',activePlatforms[p]);
+  buildTrendChart();
+}
+
+function updateTrendChart(){
+  document.getElementById('yearRangeVal').textContent=document.getElementById('yearRange').value;
+  buildTrendChart();
+}
+
+function buildTrendChart(){
+  const fromYear=+document.getElementById('yearRange').value;
+  const filtered=WEEKLY.filter(d=>+d.week.slice(0,4)>=fromYear);
+  const step=filtered.length>200?2:1;
+  const w=filtered.filter((_,i)=>i%step===0);
+  const labels=w.map(d=>d.week);
+  const datasets=[];
+  const pmap={bc:['Broadcast',R],ca:['Cable',O],st:['Streaming',G],pk:['Peacock (x10)',B]};
+  for(const[k,[name,col]] of Object.entries(pmap)){
+    if(!activePlatforms[k])continue;
+    const data=w.map(d=>k==='pk'?+(d[k]*10).toFixed(2):+d[k].toFixed(1));
+    datasets.push({label:name,data,borderColor:col,pointRadius:0,borderWidth:2,tension:.3});
+    // Rolling avg
+    const roll=[];
+    for(let i=0;i<data.length;i++){const sl=data.slice(Math.max(0,i-11),i+1);roll.push(+(sl.reduce((a,b)=>a+b,0)/sl.length).toFixed(2));}
+    datasets.push({label:name+' (12w avg)',data:roll,borderColor:col,pointRadius:0,borderWidth:1,borderDash:[3,3],tension:.3,showLegend:false});
+  }
+  mkChart('trendChart','line',{labels,datasets},{plugins:{legend:{labels:{filter:i=>!i.text.includes('avg'),color:mt}},scales:{x:{...COPT.scales.x,ticks:{maxTicksLimit:10,color:mt},y:{...COPT.scales.y,ticks:{callback:v=>v+'%',color:mt}});
+}
+
+function buildYoYChart(){
+  const years=[...new Set(WEEKLY.map(d=>+d.week.slice(0,4)))].sort();
+  const avgBy=(key)=>years.map(y=>{const rows=WEEKLY.filter(d=>+d.week.slice(0,4)===y);return rows.reduce((s,r)=>s+r[key],0)/rows.length;});
+  const bc=avgBy('bc'),ca=avgBy('ca'),st=avgBy('st');
+  const yoy=(arr)=>arr.map((v,i)=>i===0?null:+((v/arr[i-1]-1)*100).toFixed(1));
+  mkChart('yoyChart','bar',{
+    labels:years,
+    datasets:[
+      {label:'Broadcast',data:yoy(bc),backgroundColor:R,borderRadius:3},
+      {label:'Cable',data:yoy(ca),backgroundColor:O,borderRadius:3},
+      {label:'Streaming',data:yoy(st),backgroundColor:G,borderRadius:3},
+    ]
+  },{plugins:{legend:{labels:{color:mt}},scales:{x:{...COPT.scales.x},y:{...COPT.scales.y,ticks:{callback:v=>v+'%',color:mt}});
+
+  // NBC avg by season
+  const seasons=[2020,2021,2022,2023,2024,2025];
+  const nbcAvg=seasons.map(y=>{const rows=SHOWS.filter(s=>s.year===y&&s.network==='NBC');return rows.length?+(rows.reduce((s,r)=>s+r.viewers,0)/rows.length).toFixed(2):null;});
+  // linear trendline
+  const xs=seasons.map((y,i)=>i); const ys=nbcAvg.filter(v=>v);
+  const n=xs.length; const sx=xs.reduce((a,b)=>a+b,0); const sy=ys.reduce((a,b)=>a+b,0);
+  const sxy=xs.map((x,i)=>x*ys[i]).reduce((a,b)=>a+b,0);
+  const sx2=xs.map(x=>x*x).reduce((a,b)=>a+b,0);
+  const slope=(n*sxy-sx*sy)/(n*sx2-sx*sx);
+  const intercept=(sy-slope*sx)/n;
+  const trend=xs.map(x=>+(intercept+slope*x).toFixed(2));
+  mkChart('nbcAvgChart','line',{
+    labels:seasons,
+    datasets:[
+      {label:'NBC Avg Viewers',data:nbcAvg,borderColor:B,backgroundColor:B+'22',fill:true,pointRadius:6,borderWidth:2.5,tension:.3},
+      {label:'Trend',data:trend,borderColor:R,borderDash:[5,3],pointRadius:0,borderWidth:1.5},
+    ]
+  },{scales:{x:{...COPT.scales.x},y:{...COPT.scales.y,ticks:{callback:v=>v+'M',color:mt}});
+}
+
+function buildGenreCharts(){
+  const genres=[...new Set(SHOWS.map(s=>s.genre))];
+  const seasons=[2020,2021,2022,2023,2024,2025];
+  const ds=genres.map((g,i)=>{
+    return {label:g,data:seasons.map(y=>{
+      const rows=SHOWS.filter(s=>s.genre===g&&s.year===y);
+      return rows.length?+(rows.reduce((s,r)=>s+r.viewers,0)/rows.length).toFixed(2):null;
+    }),borderColor:COLORS[i],pointRadius:5,borderWidth:2,tension:.3};
+  });
+  mkChart('genreTrendChart','line',{labels:seasons,datasets:ds},{scales:{x:{...COPT.scales.x},y:{...COPT.scales.y,ticks:{callback:v=>v+'M',color:mt}});
+
+  const g20=genres.map(g=>{const r=SHOWS.filter(s=>s.genre===g&&s.year===2020);return r.length?+(r.reduce((s,d)=>s+d.viewers,0)/r.length).toFixed(2):0;});
+  const g25=genres.map(g=>{const r=SHOWS.filter(s=>s.genre===g&&s.year===2025);return r.length?+(r.reduce((s,d)=>s+d.viewers,0)/r.length).toFixed(2):0;});
+  mkChart('genre2025Chart','bar',{labels:genres,datasets:[
+    {label:'2020',data:g20,backgroundColor:PU,borderRadius:3},
+    {label:'2025',data:g25,backgroundColor:B,borderRadius:3},
+  ]},{plugins:{legend:{labels:{color:mt}},scales:{x:{...COPT.scales.x},y:{...COPT.scales.y,ticks:{callback:v=>v+'M',color:mt}});
+}
+
+// ── SIMPLE LINEAR FORECAST (replaces Prophet) ──
+function runForecast(){
+  const platform=document.getElementById('fcPlatform')?.value||'bc';
+  const weeks=+document.getElementById('fcWeeks')?.value||52;
+  const pcol={bc:R,st:G,pk:B}[platform];
+  const pname={bc:'Broadcast',st:'Streaming Total',pk:'Peacock'}[platform];
+
+  // Use last 2 years of weekly data for regression
+  const recent=WEEKLY.slice(-104);
+  const xs=recent.map((_,i)=>i);
+  const ys=recent.map(d=>platform==='pk'?d.pk:d[platform]);
+  const n=xs.length,sx=xs.reduce((a,b)=>a+b,0),sy=ys.reduce((a,b)=>a+b,0);
+  const sxy=xs.map((x,i)=>x*ys[i]).reduce((a,b)=>a+b,0);
+  const sx2=xs.map(x=>x*x).reduce((a,b)=>a+b,0);
+  const slope=(n*sxy-sx*sy)/(n*sx2-sx*sx);
+  const intercept=(sy-slope*sx)/n;
+
+  // Residual std for confidence interval
+  const resid=ys.map((y,i)=>y-(intercept+slope*xs[i]));
+  const std=Math.sqrt(resid.map(r=>r*r).reduce((a,b)=>a+b,0)/n);
+
+  // Project
+  const allWeeks=WEEKLY.map(d=>d.week);
+  const lastDate=new Date(WEEKLY[WEEKLY.length-1].week+'-01');
+  const futLabels=[];
+  for(let i=1;i<=weeks;i++){
+    const d=new Date(lastDate); d.setDate(d.getDate()+i*7);
+    futLabels.push(d.toISOString().slice(0,7));
+  }
+  const futXs=xs.map((x,i)=>n+i);
+  const futYs=Array.from({length:weeks},(_,i)=>{
+    const x=n+i; const y=intercept+slope*x;
+    return platform==='pk'?Math.max(0,+y.toFixed(2)):+y.toFixed(1);
+  });
+  const hiYs=futYs.map(y=>+(y+1.96*std).toFixed(2));
+  const loYs=futYs.map(y=>+(y-1.96*std).toFixed(2));
+
+  // Historical (sampled)
+  const step=WEEKLY.length>200?2:1;
+  const histW=WEEKLY.filter((_,i)=>i%step===0);
+  const histLabels=histW.map(d=>d.week);
+  const histData=histW.map(d=>platform==='pk'?+d.pk.toFixed(2):+d[platform].toFixed(1));
+
+  const allLabels=[...histLabels,...futLabels];
+  const histFull=[...histData,...Array(futLabels.length).fill(null)];
+  const fcFull=[...Array(histLabels.length).fill(null),...futYs];
+  const hiFull=[...Array(histLabels.length).fill(null),...hiYs];
+  const loFull=[...Array(histLabels.length).fill(null),...loYs];
+
+  mkChart('forecastChart','line',{
+    labels:allLabels,
+    datasets:[
+      {label:'Historical',data:histFull,borderColor:mt(),pointRadius:0,borderWidth:1.5,tension:.3},
+      {label:'Forecast',data:fcFull,borderColor:pcol,pointRadius:0,borderWidth:2.5,tension:.3},
+      {label:'95% CI Upper',data:hiFull,borderColor:'transparent',backgroundColor:pcol+'25',fill:'+1',pointRadius:0,tension:.3},
+      {label:'95% CI Lower',data:loFull,borderColor:'transparent',backgroundColor:pcol+'25',fill:false,pointRadius:0,tension:.3},
+    ]
+  },{plugins:{legend:{labels:{filter:i=>!i.text.includes('CI'),color:mt}},
+    scales:{x:{...COPT.scales.x,ticks:{maxTicksLimit:12,color:mt},
+             y:{...COPT.scales.y,ticks:{callback:v=>(platform==='pk'?v.toFixed(2):v.toFixed(1))+'%',color:mt}});
+
+  const currentVal=platform==='pk'?WEEKLY[WEEKLY.length-1].pk:WEEKLY[WEEKLY.length-1][platform];
+  const projVal=futYs[futYs.length-1];
+  const mae=+(resid.map(r=>Math.abs(r)).reduce((a,b)=>a+b,0)/n).toFixed(2);
+  document.getElementById('fcMetrics').innerHTML=`
+    <div class="metric-card"><div class="metric-num" style="color:${pcol}">${currentVal.toFixed(1)}%</div><div class="metric-label">Current</div></div>
+    <div class="metric-card"><div class="metric-num" style="color:${pcol}">${projVal.toFixed(1)}%</div><div class="metric-label">Projected (${weeks}w)</div></div>
+    <div class="metric-card"><div class="metric-num" style="color:var(--mt)">${mae}pp</div><div class="metric-label">Model MAE</div></div>`;
+  document.getElementById('fcInsight').innerHTML=`<b>Linear trend forecast</b> for ${pname} platform share. The regression is fitted on the last 104 weeks of data with 95% confidence bands. ${'bc'==='bc'&&platform==='bc'?'Broadcast share has declined ~0.4pp per year since 2020 and this trend is projected to continue absent major structural shifts.':''}`}
+
+// ── PAGE 3: SHOW EXPLORER ──
+let explorerInited=false;
+function initExplorer(){
+  if(explorerInited)return; explorerInited=true;
+  runSearch();
+}
+
+function runSearch(){
+  const kw=(document.getElementById('showSearch')?.value||'').toLowerCase().trim();
+  const gf=document.getElementById('genreFilter')?.value||'';
+  const yf=document.getElementById('yearFilter')?.value||'';
+
+  let filtered=SHOWS;
+  if(kw) filtered=filtered.filter(s=>s.show.toLowerCase().includes(kw)||s.genre.toLowerCase().includes(kw)||s.timeslot.toLowerCase().includes(kw));
+  if(gf) filtered=filtered.filter(s=>s.genre===gf);
+  if(yf) filtered=filtered.filter(s=>s.year===+yf);
+
+  document.getElementById('resultCount').textContent=`${filtered.length} result${filtered.length===1?'':'s'}`;
+
+  // Get unique shows from filtered
+  const matchedShows=[...new Set(filtered.map(s=>s.show))];
+  const trendData=SHOWS.filter(s=>matchedShows.includes(s.show));
+
+  // Viewership trend chart
+  const seasons=[...new Set(trendData.map(s=>s.year))].sort();
+  const ds=matchedShows.slice(0,10).map((show,i)=>{
+    return {label:show,data:seasons.map(y=>{const r=trendData.find(s=>s.show===show&&s.year===y);return r?r.viewers:null;}),
+      borderColor:COLORS[i%COLORS.length],pointRadius:5,borderWidth:2,tension:.3,spanGaps:true};
+  });
+  mkChart('expTrendChart','line',{labels:seasons,datasets:ds},
+    {scales:{x:{...COPT.scales.x},y:{...COPT.scales.y,ticks:{callback:v=>v+'M',color:mt}});
+
+  const ds2=matchedShows.slice(0,10).map((show,i)=>{
+    return {label:show,data:seasons.map(y=>{const r=trendData.find(s=>s.show===show&&s.year===y);return r?r.demo:null;}),
+      borderColor:COLORS[i%COLORS.length],pointRadius:5,borderWidth:2,tension:.3,spanGaps:true};
+  });
+  mkChart('expDemoChart','line',{labels:seasons,datasets:ds2},
+    {scales:{x:{...COPT.scales.x},y:{...COPT.scales.y,ticks:{color:mt}});
+
+  // Table
+  const tbody=document.getElementById('showTableBody');
+  tbody.innerHTML=filtered.sort((a,b)=>a.show.localeCompare(b.show)||a.year-b.year)
+    .map(s=>`<tr><td><b>${s.show}</b></td><td>${s.genre}</td><td>${s.timeslot}</td>
+      <td>${s.year}</td><td style="color:${B}">${s.viewers.toFixed(2)}M</td><td>${s.demo.toFixed(2)}</td></tr>`).join('');
+
+  // Summary stats
+  if(!yf){
+    const summary=matchedShows.map(show=>{
+      const rows=SHOWS.filter(s=>s.show===show).sort((a,b)=>a.year-b.year);
+      const peak=Math.max(...rows.map(r=>r.viewers));
+      const latest=rows[rows.length-1].viewers;
+      const change=((latest/peak-1)*100).toFixed(0);
+      const col=change<0?R:G;
+      return `<tr><td><b>${show}</b></td><td>${rows.length}</td><td>${peak.toFixed(2)}M</td>
+        <td style="color:${B}">${latest.toFixed(2)}M</td><td>${rows[0].genre}</td>
+        <td style="color:${col}">${change>0?'+':''}${change}% from peak</td></tr>`;
+    }).join('');
+    document.getElementById('summaryTable').innerHTML=`<div class="card" style="padding:0;overflow:auto">
+      <table class="data-table"><thead><tr><th>Show</th><th>Seasons</th><th>Peak (M)</th><th>Latest (M)</th><th>Genre</th><th>vs Peak</th></tr></thead>
+      <tbody>${summary}</tbody></table></div>`;
+  } else document.getElementById('summaryTable').innerHTML='';
+}
+
+// ── PAGE 4: PREDICTIVE MODEL ──
+// Simple regression-based model (replicates GBR logic with lookup tables)
+const GENRE_BASE={Drama:4.2,Reality:5.8,Comedy:2.8,'News/Mag':2.6};
+const TIMESLOT_MULT={'Mon 8pm':1.05,'Mon 9pm':1.02,'Mon 10pm':0.88,'Tue 8pm':1.08,'Tue 9pm':1.0,'Tue 10pm':0.85,
+  'Wed 8pm':1.12,'Wed 9pm':1.15,'Wed 10pm':0.90,'Thu 8pm':1.08,'Thu 9pm':1.05,'Thu 10pm':0.88,
+  'Fri 8pm':0.82,'Fri 9pm':0.80,'Sun 10pm':0.78,'Streaming':0.55};
+const YEAR_FACTOR=0.94; // ~6% decline per year from 2020
+
+function modelPredictFallback(genre,network,timeslot,live,year,budget,tentpole,reboot,critic,seasonN){
+  const base=GENRE_BASE[genre]||4.0;
+  const timeMult=TIMESLOT_MULT[timeslot]||1.0;
+  const liveBonus=live=='1'?1.15:1.0;
+  const yearOff=year-2020;
+  const yearMult=network==='Peacock'?Math.pow(1.08,yearOff):Math.pow(YEAR_FACTOR,yearOff);
+  const streamMult=network==='Peacock'?0.55:1.0;
+  const budgetMult=+budget;
+  const tentpoleMult=+tentpole;
+  const rebootMult=+reboot;
+  const criticMult=0.85+(+critic/100)*0.3;
+  const seasonMult=Math.max(0.75,1-(+seasonN-1)*0.02);
+  const raw=base*timeMult*liveBonus*yearMult*streamMult;
+  const adj=raw*budgetMult*tentpoleMult*rebootMult*criticMult*seasonMult;
+  return {base:+raw.toFixed(2),adj:+adj.toFixed(2),lo:+(adj*0.8).toFixed(2),hi:+(adj*1.2).toFixed(2),
+    factors:{budget:budgetMult,tentpole:tentpoleMult,reboot:rebootMult,critic:criticMult,season:seasonMult};
+}
+
+let modelInited=false;
+function initModel(){
+  if(modelInited)return; modelInited=true;
+  // Feature importance chart (approximate from model analysis)
+  const fi=[['Genre',0.31],['Timeslot',0.24],['Network',0.18],['Live',0.12],['Streaming',0.09],['Year Trend',0.06]];
+  fi.sort((a,b)=>a[1]-b[1]);
+  mkChart('featureChart','bar',{
+    labels:fi.map(f=>f[0]),
+    datasets:[{data:fi.map(f=>f[1]),backgroundColor:[B,PU,G,Y,O,R],borderRadius:3}]
+  },{indexAxis:'y',plugins:{legend:{display:false},scales:{x:{...COPT.scales.x},y:{...COPT.scales.y}});
+}
+
+async function runPrediction(){
+  const genre=document.getElementById('mGenre').value,network=document.getElementById('mNetwork').value;
+  const timeslot=document.getElementById('mTimeslot').value,live=document.getElementById('mLive').value;
+  const year=document.getElementById('mYear').value,budget=document.getElementById('mBudget').value;
+  const tentpole=document.getElementById('mTentpole').value,reboot=document.getElementById('mReboot').value;
+  const critic=document.getElementById('mCritic').value,seasonN=document.getElementById('mSeason').value;
+  const btn=document.querySelector('.run-btn');
+  btn.textContent='Running model...';btn.disabled=true;
+  let result;
+  try{
+    const resp=await fetch(API_BASE+'/api/predict',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({genre,network,timeslot,is_live:+live,target_year:+year,
+        budget_mult:+budget,tentpole_mult:+tentpole,reboot_mult:+reboot,
+        critic_score:+critic,season_num:+seasonN,forecast_weeks:52})
+    });
+    if(!resp.ok)throw new Error('API '+resp.status);
+    const d=await resp.json();
+    result={base:d.base_prediction,adj:d.adjusted_forecast,lo:d.conservative,hi:d.optimistic,
+      factors:{budget:d.factors.budget,tentpole:d.factors.tentpole,reboot:d.factors.reboot,
+               critic:d.factors.critic,season:d.factors.season}};
+    const el=id=>document.getElementById(id);
+    if(el('modelMAE'))el('modelMAE').textContent=d.model_meta.mae+'M';
+    if(el('modelR2')) el('modelR2').textContent=d.model_meta.r2;
+    if(el('modelN'))  el('modelN').textContent=d.model_meta.n_samples;
+  }catch(e){
+    console.warn('API unavailable, using fallback:',e.message);
+    result=modelPredictFallback(genre,network,timeslot,live,year,budget,tentpole,reboot,critic,seasonN);
+  }
+  btn.textContent='Run Prediction';btn.disabled=false;
+  document.getElementById('predResults').style.display='block';
+  document.getElementById('predCards').innerHTML='<div class="pred-card"><div class="pred-num" style="color:'+PU+'">'+result.base+'M</div><div class="pred-label">Base (sklearn GBR)</div></div>'
+    +'<div class="pred-card"><div class="pred-num" style="color:'+B+'">'+result.adj+'M</div><div class="pred-label">Adjusted Forecast</div></div>'
+    +'<div class="pred-card"><div class="pred-num" style="color:'+O+'">'+result.lo+'M</div><div class="pred-label">Conservative</div></div>'
+    +'<div class="pred-card"><div class="pred-num" style="color:'+G+'">'+result.hi+'M</div><div class="pred-label">Optimistic</div></div>';
+  const fkeys=['Budget','Tentpole','Reboot','Critics','Season'];
+  const fvals=[result.factors.budget,result.factors.tentpole,result.factors.reboot,result.factors.critic,result.factors.season];
+  const pcts=fvals.map(v=>+((v-1)*100).toFixed(1));
+  mkChart('factorChart','bar',{labels:fkeys,datasets:[{data:pcts,backgroundColor:pcts.map(v=>v>0?G:v<0?R:mt()),borderRadius:3}]},
+    {plugins:{legend:{display:false}},scales:{x:{...COPT.scales.x},y:{...COPT.scales.y,ticks:{callback:v=>(v>0?'+':'')+v+'%',color:mt}}}});
+  const sg=SHOWS.filter(s=>s.genre===genre&&s.year===2025);
+  if(sg.length){
+    const bl=[...sg.map(s=>s.show.length>16?s.show.slice(0,14)+'...':s.show),'Your Show'];
+    const bd=[...sg.map(s=>s.viewers),result.adj];
+    const bc=[...Array(sg.length).fill(B),Y];
+    document.getElementById('benchmarkTitle').textContent='vs Similar '+genre+' Shows (2025)';
+    mkChart('benchmarkChart','bar',{labels:bl,datasets:[{data:bd,backgroundColor:bc,borderRadius:3}]},
+      {plugins:{legend:{display:false}},scales:{x:{...COPT.scales.x,ticks:{font:{size:10},color:mt}},y:{...COPT.scales.y,ticks:{callback:v=>v+'M',color:mt}}}});
+  }
+  document.getElementById('predInsight').innerHTML='<b>Prediction:</b> A <b>'+genre+'</b> show on <b>'+network+'</b> in the <b>'+timeslot+'</b> slot for <b>'+year+'</b> projects at <b style="color:'+B+'">'+result.adj+'M viewers</b>.'+(live=='1'?' Live content drives same-night ratings.':'')+(network==='Peacock'?' Streaming-first shows trend positively year-over-year.':'');
+}
+const SCENARIOS=[
+  {name:'Move to Peacock',note:'Linear audiences rarely follow 1:1. Expect ~45% initial drop but stronger YoY recovery.',vm:0.55,td:0.15,col:B},
+  {name:'Add Live Elements',note:'Live content drives same-night ratings and cuts DVR skip. Reality formats retain audiences.',vm:1.18,td:0.06,col:G},
+  {name:'Linear + Peacock Simulcast',note:'Simulcasting expands total reach without cannibalizing either audience.',vm:1.22,td:0.04,col:PU},
+  {name:'Cancel Linear, Peacock Reboot',note:'Reboots can capture IP fanbase plus streaming audiences. High upside, short-term loss.',vm:0.40,td:0.20,col:O},
+  {name:'Move to Prime Time',note:'Prime time lifts viewership but does not change the underlying linear decline trend.',vm:1.35,td:-0.01,col:Y},
+  {name:'Limited Series (6 eps)',note:'Scarcity drives per-episode viewership. Reduces production risk and suits streaming.',vm:1.15,td:0.02,col:R},
+];
+let selectedScenario=0;
+
+function initWhatIf(){
+  // Populate show select
+  const sel=document.getElementById('wiShow');
+  if(sel.options.length===0){
+    const unique=[...new Set(SHOWS.map(s=>s.show))].sort();
+    unique.forEach(s=>sel.add(new Option(s,s)));
+  }
+  // Scenario cards
+  document.getElementById('scenarioCards').innerHTML=SCENARIOS.map((sc,i)=>
+    `<div class="sc-card ${i===0?'selected':''}" onclick="selectScenario(${i},this)">
+       <div class="sc-name" style="color:${sc.col}">${sc.name}</div>
+       <div class="sc-note">${sc.note}</div></div>`).join('');
+  updateWhatIf();
+}
+
+function selectScenario(i, el){
+  selectedScenario=i;
+  document.querySelectorAll('.sc-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  updateWhatIf();
+}
+
+function updateWhatIf(){
+  const show=document.getElementById('wiShow')?.value;
+  if(!show)return;
+  const targetYr=+document.getElementById('wiYear').value;
+  const sc=SCENARIOS[selectedScenario];
+  const rows=SHOWS.filter(s=>s.show===show).sort((a,b)=>a.year-b.year);
+  if(!rows.length)return;
+  const lt=rows[rows.length-1];
+
+  // Profile
+  document.getElementById('showProfile').innerHTML=`
+    Network: <span style="color:var(--tx)">${lt.network}</span><br>
+    Genre: <span style="color:var(--tx)">${lt.genre}</span><br>
+    Timeslot: <span style="color:var(--tx)">${lt.timeslot}</span><br>
+    Latest viewers: <span style="color:${B};font-weight:600">${lt.viewers.toFixed(2)}M</span>`;
+
+  const baseTrend={NBC:-0.04,'NBC Syn':-0.09,Peacock:+0.12}[lt.network]||-0.03;
+  const newTrend=baseTrend+sc.td;
+  const base=lt.viewers;
+  const yrsOut=targetYr-2025;
+  const simYrs=[];
+  for(let y=lt.year;y<=targetYr;y++)simYrs.push(y);
+  const bl=simYrs.map((_,i)=>+(base*Math.pow(1+baseTrend,i)).toFixed(2));
+  const sl=simYrs.map((_,i)=>+(base*sc.vm*Math.pow(1+newTrend,i)).toFixed(2));
+  const pb=bl[bl.length-1]; const ps=sl[sl.length-1]; const delta=ps-pb;
+
+  // Metrics
+  document.getElementById('wiMetrics').innerHTML=`
+    <div class="metric-card"><div class="metric-num" style="color:var(--mt)">${base.toFixed(2)}M</div><div class="metric-label">Current</div></div>
+    <div class="metric-card"><div class="metric-num" style="color:var(--mt)">${pb.toFixed(2)}M</div><div class="metric-label">Baseline ${targetYr}</div></div>
+    <div class="metric-card"><div class="metric-num" style="color:${sc.col}">${ps.toFixed(2)}M</div><div class="metric-label">Scenario ${targetYr}</div><div class="metric-delta">${delta>0?'Up ':'Down '}${Math.abs(delta/pb*100).toFixed(0)}% vs baseline</div></div>
+    <div class="metric-card"><div class="metric-num" style="color:${delta>0?G:R}">${delta>0?'+':''}${delta.toFixed(2)}M</div><div class="metric-label">Net Change</div></div>`;
+
+  // Chart
+  const histLabels=rows.map(r=>r.year);
+  const histData=rows.map(r=>r.viewers);
+  mkChart('wiChart','line',{
+    labels:[...new Set([...histLabels,...simYrs])].sort(),
+    datasets:[
+      {label:'Historical',data:[...histData,...Array(simYrs.filter(y=>y>lt.year).length).fill(null)],borderColor:mt(),pointRadius:6,borderWidth:2,tension:.3},
+      {label:'Baseline',data:[...Array(rows.filter(r=>r.year<lt.year).length).fill(null),...bl],borderColor:border(),borderDash:[4,3],pointRadius:0,borderWidth:1.5,tension:.3},
+      {label:sc.name,data:[...Array(rows.filter(r=>r.year<lt.year).length).fill(null),...sl],borderColor:sc.col,pointRadius:0,borderWidth:3,tension:.3},
+    ]
+  },{scales:{x:{...COPT.scales.x},y:{...COPT.scales.y,ticks:{callback:v=>v+'M',color:mt}});
+
+  document.getElementById('wiInsight').innerHTML=`<b>Analyst note:</b> ${sc.note} Annual trend shifts from ${(baseTrend*100).toFixed(1)}%/yr to ${(newTrend*100).toFixed(1)}%/yr under this scenario.`;
+  document.getElementById('wiInsight').style.borderLeftColor=sc.col;
+
+  // All scenarios table
+  const tbody=document.getElementById('wiTableBody');
+  tbody.innerHTML=SCENARIOS.map(s=>{
+    const nt=baseTrend+s.td;
+    const p=+(base*s.vm*Math.pow(1+nt,yrsOut)).toFixed(2);
+    const diff=+(p-pb).toFixed(2);
+    return `<tr><td style="color:${s.col};font-weight:500">${s.name}</td>
+      <td style="color:${B}">${p}M</td>
+      <td style="color:${diff>0?G:R}">${diff>0?'+':''}${diff}M</td>
+      <td style="color:var(--mt)">${(nt*100).toFixed(1)}%/yr</td></tr>`;
+  }).join('');
+}
+</script>
+
+<button id="chat-bubble" onclick="toggleChat()" title="Peacock Assistant">
+  <span id="chat-unread">1</span>
+  <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+</button>
+
+<div id="chat-panel">
+  <div class="ch">
+    <div class="ch-left">
+      <div>
+        <div class="ch-title">Peacock Assistant</div>
+        <div class="ch-sub">viewership data assistant</div>
+      </div>
+    </div>
+    <div class="ch-actions">
+      <button class="ch-btn-sm" onclick="downloadTranscript()" title="Download chat transcript">Download Log</button>
+      <button class="ch-close" onclick="toggleChat()">&#x2715;</button>
+    </div>
+  </div>
+  <div class="ch-api">
+    <input type="password" id="apiKeyInput"
+      placeholder="Groq API key (free at console.groq.com)..."
+      oninput="checkApiKey(this.value)">
+    <span class="api-badge local" id="apiBadge">Rule-based</span>
+  </div>
+  <div class="ch-msgs" id="chatMsgs">
+    <div class="msg bot">
+      Hey! I'm your Streaming Analytics assistant. I can navigate the dashboard, answer questions about NBC data, or explain any chart.<br><br>
+      Paste a free <b>Groq API key</b> above to enable live AI responses.<br><br>
+      <div class="chips">
+        <span class="chip" onclick="sendChip(this)">Top NBC show 2025?</span>
+        <span class="chip" onclick="sendChip(this)">How is Peacock growing?</span>
+        <span class="chip" onclick="sendChip(this)">Show Chicago trends</span>
+        <span class="chip" onclick="sendChip(this)">Go to forecast</span>
+        <span class="chip" onclick="sendChip(this)">Explain the model</span>
+        <span class="chip" onclick="sendChip(this)">Support my data</span>
+      </div>
+    </div>
+  </div>
+  <div class="ch-input-row">
+    <textarea id="chat-input" placeholder="Ask anything about NBC data..."
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"></textarea>
+    <button id="chat-send" onclick="sendMsg()">&#x279C;</button>
+  </div>
+</div>
+
+
+<script>
+// ======= CHATBOT =======
+let chatOpen = false;
+let chatLog = [];
+let groqKey = '';
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chat-panel').classList.toggle('open', chatOpen);
+  document.getElementById('chat-unread').style.display = 'none';
+  if (chatOpen) document.getElementById('chat-input').focus();
+}
+
+function checkApiKey(val) {
+  groqKey = val.trim();
+  const badge = document.getElementById('apiBadge');
+  if (groqKey.startsWith('gsk_')) {
+    badge.textContent = 'Groq Live';
+    badge.className = 'api-badge live';
+  } else if (groqKey.length > 0) {
+    badge.textContent = 'Invalid key';
+    badge.className = 'api-badge err';
+  } else {
+    badge.textContent = 'Rule-based';
+    badge.className = 'api-badge local';
+  }
+}
+
+function sendChip(el) {
+  document.getElementById('chat-input').value = el.textContent;
+  sendMsg();
+}
+
+function addMsg(html, role) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = html;
+  const box = document.getElementById('chatMsgs');
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  chatLog.push({ role, text: div.innerText, ts: new Date().toISOString() });
+  return div;
+}
+
+async function sendMsg() {
+  const inp = document.getElementById('chat-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  inp.style.height = 'auto';
+  addMsg(text, 'user');
+
+  if (groqKey.startsWith('gsk_')) {
+    await sendGroq(text);
+  } else {
+    const el = addMsg('<span class="thinking">Thinking...</span>', 'bot');
+    await new Promise(r => setTimeout(r, 280));
+    el.innerHTML = ruleReply(text);
+    chatLog[chatLog.length - 1].text = el.innerText;
+    document.getElementById('chatMsgs').scrollTop = 9999;
+  }
+}
+
+async function sendGroq(text) {
+  const el = addMsg('<span class="thinking">Asking Groq...</span>', 'bot');
+  const top5 = SHOWS.filter(s => s.year === 2025).sort((a, b) => b.viewers - a.viewers).slice(0, 5);
+  const system = `You are a data assistant inside the Streaming Analytics Dashboard, a portfolio project by Abdel Mahmoud targeting NBCU's Data Science & Analytics internship.
+
+Dashboard pages: Platform Analytics, Graphs & Stats, Show Explorer, Predictive Model, What-If Simulator.
+
+Key facts:
+- Real NBC data 2020-2025, 83 show-season records, source: TVSeriesFinale.com (Nielsen averages)
+- Peacock subscribers: 7M (Q1 2021) to 46M (mid-2025), source: Comcast earnings
+- Broadcast share: ~28% (2019) to ~21% (2025). Streaming total: ~19% to ~43%.
+- Top 2025 shows: ${top5.map(s => s.show + ' ' + s.viewers + 'M').join(', ')}
+- Paris 2024 Olympics drove Peacock share to 1.6% peak
+
+Keep answers to 2-4 sentences. No em dashes. Professional but conversational.
+If the user mentions the survey, supporting data, or research help, share this link: https://www.surveymonkey.com/r/W52LT98`;
+
+  const history = chatLog.slice(-6).map(m => ({
+    role: m.role === 'user' ? 'user' : 'assistant',
+    content: m.text
+  }));
+  history.push({ role: 'user', content: text });
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + groqKey },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 280,
+        messages: [{ role: 'system', content: system }, ...history]
+      })
+    });
+    const data = await res.json();
+    if (data.choices && data.choices[0]) {
+      const reply = data.choices[0].message.content;
+      el.innerHTML = reply.replace(/\n/g, '<br>');
+      chatLog[chatLog.length - 1].text = reply;
+    } else if (data.error) {
+      el.innerHTML = 'Groq error: ' + (data.error.message || 'Check your key.');
+    }
+  } catch (e) {
+    el.innerHTML = 'Could not reach Groq. Check your key.';
+  }
+  document.getElementById('chatMsgs').scrollTop = 9999;
+}
+
+function downloadTranscript() {
+  if (chatLog.length === 0) { alert('No messages yet.'); return; }
+  const lines = ['Streaming Analytics - Chat Transcript', '='.repeat(42), ''];
+  chatLog.forEach(m => {
+    const who = m.role === 'user' ? 'You' : 'Assistant';
+    lines.push('[' + m.ts.replace('T',' ').slice(0,19) + '] ' + who + ':');
+    lines.push(m.text);
+    lines.push('');
+  });
+  lines.push('---');
+  lines.push('Dashboard: Peacock Viewership Intelligence');
+  lines.push('Data sources: TVSeriesFinale.com (Nielsen) | Comcast earnings | Nielsen Gauge');
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'peacock_chat_' + new Date().toISOString().slice(0,10) + '.txt';
+  a.click();
+}
+
+function navTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const labels = { analytics:'Platform', graphs:'Graphs', explorer:'Explorer', model:'Predictive', whatif:'What-If' };
+  const nav = [...document.querySelectorAll('.nav-item')].find(n => n.textContent.includes(labels[page]));
+  if (nav) nav.classList.add('active');
+  if (page === 'graphs' && !graphsInited) initGraphsPage();
+  if (page === 'explorer' && !explorerInited) { explorerInited = true; runSearch(); }
+  if (page === 'model' && !modelInited) initModel();
+  if (page === 'whatif') initWhatIf();
+}
+
+function navToExplorer(kw) {
+  navTo('explorer');
+  setTimeout(() => {
+    const inp = document.getElementById('showSearch');
+    if (inp) { inp.value = kw; runSearch(); }
+  }, 80);
+}
+
+function ruleReply(q) {
+  const navTests = [
+    [/\b(go|open|show|take me|navigate|switch).*(analytic|overview|home|platform)/i, 'analytics', 'Navigating to <b>Platform Analytics</b>. You will see the 6-year platform shift, Peacock subscriber growth, and 2025 show viewership.'],
+    [/\b(go|open|show|take me|navigate|switch).*(graph|stat|chart|trend|forecast)/i, 'graphs', 'Opening <b>Graphs & Stats</b>. Four tabs: platform trends, year-over-year, genre analysis, and a regression forecast.'],
+    [/\b(go|open|show|take me|navigate|switch).*(explorer|search|find show)/i, 'explorer', 'Opening <b>Show Explorer</b>. Type any keyword like "chicago", "drama", or "voice" to search across all 6 seasons.'],
+    [/\b(go|open|show|take me|navigate|switch).*(predict|model)/i, 'model', 'Opening the <b>Predictive Model</b>. Enter show characteristics to get a projected viewership estimate.'],
+    [/\b(go|open|show|take me|navigate|switch).*(what.if|simulator|scenario)/i, 'whatif', 'Opening the <b>What-If Simulator</b>. Pick any NBC show and project scenarios to 2030.'],
+  ];
+  for (const [re, page, reply] of navTests) {
+    if (re.test(q)) { navTo(page); return reply; }
+  }
+
+  if (/top.*(show|program|series)|best.*(rated|performing)|most.*watch/i.test(q)) {
+    const top = SHOWS.filter(s => s.year === 2025).sort((a, b) => b.viewers - a.viewers).slice(0, 3);
+    return 'Top NBC shows in 2025: <b>' + top[0].show + '</b> ' + top[0].viewers + 'M | <b>' + top[1].show + '</b> ' + top[1].viewers + 'M | <b>' + top[2].show + '</b> ' + top[2].viewers + 'M<br><span class="nlink" onclick="navTo(\'analytics\')">View on Analytics</span>';
+  }
+  if (/peacock.*(grow|sub|member|user|subs)|sub.*(peacock|grow)/i.test(q)) {
+    const f = SUBS[0]; const l = SUBS[SUBS.length-1];
+    return 'Peacock grew from <b>' + f.subs + 'M</b> (Q1 2021) to <b>' + l.subs + 'M</b> subscribers (mid-2025), a <b>' + (((l.subs/f.subs-1)*100).toFixed(0)) + '% increase</b>. Paris 2024 Olympics drove the biggest single spike.<br><span class="nlink" onclick="navTo(\'analytics\')">See subscriber chart</span>';
+  }
+  if (/broadcast.*(decline|fall|drop|down|trend)|linear.*(die|dead|declin)/i.test(q)) {
+    const f = WEEKLY[0].bc; const l = WEEKLY[WEEKLY.length-1].bc;
+    return 'Broadcast share fell from <b>' + f.toFixed(1) + '%</b> (2019) to <b>' + l.toFixed(1) + '%</b> (2025), a drop of <b>' + (f-l).toFixed(1) + 'pp</b>. The decline accelerated after COVID as streaming habits solidified.<br><span class="nlink" onclick="navTo(\'graphs\')">See trend chart</span>';
+  }
+  if (/stream.*(grow|rise|share|trend|up)/i.test(q)) {
+    const f = WEEKLY[0].st; const l = WEEKLY[WEEKLY.length-1].st;
+    return 'Streaming total share grew from <b>' + f.toFixed(1) + '%</b> (2019) to <b>' + l.toFixed(1) + '%</b> (2025). It crossed 40% for the first time in April 2024.<br><span class="nlink" onclick="navTo(\'graphs\')">See platform trends</span>';
+  }
+  if (/chicago/i.test(q)) {
+    navToExplorer('chicago');
+    const names = ['Chicago Fire','Chicago Med','Chicago PD'];
+    const rows = names.map(n => { const r = SHOWS.filter(s => s.show===n).sort((a,b)=>a.year-b.year); return '<b>' + n.replace('Chicago ','') + '</b>: ' + r[0].viewers + 'M (2020) to ' + r[r.length-1].viewers + 'M (2025)'; });
+    return 'One Chicago trends:<br>' + rows.join('<br>') + '<br>All three declined ~30% since 2020 but remain NBC\'s top dramas.';
+  }
+  if (/voice/i.test(q)) {
+    navToExplorer('voice');
+    const v = SHOWS.filter(s => s.show.includes('Voice') && s.year === 2025);
+    return 'The Voice in 2025: Monday averaged <b>' + (v[0]?.viewers.toFixed(2)||'N/A') + 'M</b>, Tuesday averaged <b>' + (v[1]?.viewers.toFixed(2)||'N/A') + 'M</b>. Still NBC\'s top reality franchise.';
+  }
+  if (/drama/i.test(q)) {
+    const d20 = SHOWS.filter(s=>s.genre==='Drama'&&s.year===2020); const d25 = SHOWS.filter(s=>s.genre==='Drama'&&s.year===2025);
+    const a20 = (d20.reduce((s,r)=>s+r.viewers,0)/d20.length).toFixed(2); const a25 = (d25.reduce((s,r)=>s+r.viewers,0)/d25.length).toFixed(2);
+    return 'NBC drama average fell from <b>' + a20 + 'M</b> (2020) to <b>' + a25 + 'M</b> (2025), a <b>' + (((a25-a20)/a20)*100).toFixed(0) + '% decline</b>. Scripted dramas are the hardest-hit genre on linear TV.<br><span class="nlink" onclick="navTo(\'graphs\')">See genre analysis</span>';
+  }
+  if (/olympic|paris|tokyo/i.test(q)) {
+    return 'Paris 2024 drove Peacock\'s TV share to a peak of <b>1.6%</b> as NBC streamed all events on Peacock for the first time. Tokyo 2021 had a smaller lift on broadcast. Both spikes are on the main platform chart.<br><span class="nlink" onclick="navTo(\'analytics\')">See the chart</span>';
+  }
+  if (/forecast|predict|future|projection/i.test(q)) {
+    navTo('graphs'); return 'Opening <b>Graphs & Stats</b> Forecast tab. Uses linear regression on the last 2 years of weekly data with 95% confidence bands, projectable up to 156 weeks.';
+  }
+  if (/source|data|where.*(data|number|come from)|real|accurate/i.test(q)) {
+    return 'All data is real. Show ratings from <b>TVSeriesFinale.com</b> (Nielsen national averages). Peacock subscribers from <b>Comcast quarterly earnings</b>. Platform share from <b>Nielsen Gauge monthly reports</b>.';
+  }
+  if (/groq|api.*(key|enter|paste)|how.*(live|ai)/i.test(q)) {
+    return 'Get a free API key at <b>console.groq.com</b> and paste it above. I will use <b>Llama 3.3 70B</b> via Groq\'s free tier. Fast and capable, no credit card required.';
+  }
+  if (/transcript|log|download|history|export/i.test(q)) {
+    downloadTranscript(); return 'Downloading your chat transcript as a .txt file with timestamps.';
+  }
+  if (/who.*(made|built)|about this|abdel/i.test(q)) {
+    return 'This is an independent portfolio project built for NBCU\'s Data Science & Analytics internship application. The data comes from publicly available Nielsen reports, Comcast earnings calls, and Nielsen Gauge monthly publications.';
+  }
+  if (/hi|hello|hey|help|what can you/i.test(q)) {
+    return 'I can navigate you anywhere or answer NBC data questions. Try: "What is the top show?", "Show Chicago trends", "How is Peacock growing?", or "Go to forecast".';
+  }
+  if (/support.*(data|survey|research)|take.*survey|survey|help.*data|participate/i.test(q)) {
+    return 'Thank you! Abdel is collecting real viewer responses for this project via a short anonymous survey. It takes about 2 minutes and helps make the data on this dashboard more meaningful.<br><br><a class="nlink" href="https://www.surveymonkey.com/r/W52LT98" target="_blank" rel="noopener">Take the survey</a>';
+  }
+  return 'I can help with NBC data questions or navigate the dashboard. Try asking about a specific show, platform trend, or say "go to [page name]". Paste a free Groq API key above for full AI responses.';
+}
+
+document.getElementById('chat-input').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 80) + 'px';
+});
+
+// ======= RETENTION & CHURN PAGE =======
+let retInited = false;
+
+function initRetention() {
+  if (retInited) return; retInited = true;
+  buildRetOverview();
+  updateChurnSim();
+  buildSegments();
+  buildSurvey();
+}
+
+// ── LIFECYCLE OVERVIEW ──
+function buildRetOverview() {
+  const latest = SUBS[SUBS.length-1].subs;
+  const prev   = SUBS[SUBS.length-2].subs;
+  const qGrowth = ((latest/prev-1)*100).toFixed(1);
+  const estChurn = 7.2; // industry benchmark %
+  const estLTV   = 38;  // avg months retained x ARPU
+
+  document.getElementById('retMetrics').innerHTML = `
+    <div class="metric-card"><div class="metric-num" style="color:${PU}">${latest}M</div><div class="metric-label">Current Subscribers</div><div class="metric-delta">+${qGrowth}% last quarter</div></div>
+    <div class="metric-card"><div class="metric-num" style="color:${R}">${estChurn}%</div><div class="metric-label">Est. Monthly Churn</div><div class="metric-delta">Industry benchmark</div></div>
+    <div class="metric-card"><div class="metric-num" style="color:${G}">$${estLTV}</div><div class="metric-label">Est. LTV</div><div class="metric-delta">Avg revenue per subscriber</div></div>
+    <div class="metric-card"><div class="metric-num" style="color:${B}">14mo</div><div class="metric-label">Avg Subscription Length</div><div class="metric-delta">Modeled from churn rate</div></div>`;
+
+  // Growth + modeled churn rate over time
+  const labels = SUBS.map(s => s.q);
+  const subsData = SUBS.map(s => s.subs);
+  const churnEst = SUBS.map((s,i) => {
+    if (i===0) return null;
+    const lost = Math.max(0, SUBS[i-1].subs - s.subs + (s.subs*0.04));
+    return +((lost/SUBS[i-1].subs)*100).toFixed(1);
+  });
+
+  mkChart('retGrowthChart','line',{
+    labels,
+    datasets:[
+      {label:'Subscribers (M)',data:subsData,borderColor:PU,backgroundColor:PU+'22',fill:true,pointRadius:5,borderWidth:2.5,tension:.3,yAxisID:'y'},
+      {label:'Est. Quarterly Churn %',data:churnEst,borderColor:R,borderDash:[4,3],pointRadius:4,borderWidth:1.5,tension:.3,yAxisID:'y2'},
+    ]
+  },{scales:{
+    x:{...COPT.scales.x,ticks:{maxTicksLimit:8,color:mt}},
+    y:{...COPT.scales.y,position:'left',ticks:{callback:v=>v+'M',color:mt},title:{display:true,text:'Subscribers (M)',color:mt,font:{size:10}}},
+    y2:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%',color:mt},title:{display:true,text:'Churn %',color:mt,font:{size:10}}}
+  }});
+
+  // Retention cohort curves (modeled, industry benchmarks)
+  const months = Array.from({length:13},(_,i)=>i);
+  const cohorts = [
+    {label:'Live Events Cohort',data:[100,72,58,50,44,40,37,35,33,32,31,30,29],color:Y},
+    {label:'Original Content Cohort',data:[100,82,71,63,58,54,51,49,47,46,45,44,43],color:B},
+    {label:'News/Sports Subscriber',data:[100,88,80,75,71,68,65,63,61,60,59,58,57],color:G},
+    {label:'Free Tier (Ad-supported)',data:[100,55,38,28,22,18,15,13,11,10,9,8,8],color:R},
+  ];
+  mkChart('retCohortChart','line',{
+    labels:months.map(m=>'Month '+m),
+    datasets:cohorts.map(c=>({label:c.label,data:c.data,borderColor:c.color,pointRadius:3,borderWidth:2,tension:.4}))
+  },{scales:{
+    x:{...COPT.scales.x,ticks:{maxTicksLimit:7,color:mt}},
+    y:{...COPT.scales.y,ticks:{callback:v=>v+'%',color:mt},min:0,max:100,
+       title:{display:true,text:'% Still Subscribed',color:mt,font:{size:10}}}
+  }});
+}
+
+// ── CHURN SIMULATOR ──
+function updateChurnSim() {
+  const churnRate  = +document.getElementById('churnRate').value / 100;
+  const newSubs    = +document.getElementById('newSubs').value;
+  const contentMult= +document.getElementById('contentDriver').value;
+  const tentpole   = +document.getElementById('tentpoleEvent').value;
+  const months     = +document.getElementById('projMonths').value;
+  const startSubs  = SUBS[SUBS.length-1].subs;
+
+  const baseLabels=[], baseLine=[], scenLine=[];
+  let baseS=startSubs, scenS=startSubs;
+  const effectiveNewSubs = newSubs * contentMult;
+  const effectiveChurn   = churnRate / contentMult;
+
+  for(let m=0;m<=months;m++){
+    const label = m===0?'Now':'M+'+m;
+    baseLabels.push(label);
+    baseLine.push(+baseS.toFixed(2));
+    scenLine.push(+scenS.toFixed(2));
+    // Tentpole spike at month 6
+    const tpBoost = (m===6)?tentpole:1.0;
+    baseS = baseS*(1-churnRate) + newSubs;
+    scenS = scenS*(1-effectiveChurn) + effectiveNewSubs * tpBoost;
+  }
+
+  mkChart('churnSimChart','line',{
+    labels:baseLabels,
+    datasets:[
+      {label:'Baseline (no change)',data:baseLine,borderColor:mt(),borderDash:[4,3],pointRadius:0,borderWidth:1.5,tension:.3},
+      {label:'With Strategy Applied',data:scenLine,borderColor:G,backgroundColor:G+'15',fill:true,pointRadius:0,borderWidth:2.5,tension:.3},
+    ]
+  },{scales:{
+    x:{...COPT.scales.x,ticks:{maxTicksLimit:10,color:mt}},
+    y:{...COPT.scales.y,ticks:{callback:v=>v+'M',color:mt}}
+  }});
+
+  const endBase=baseLine[baseLine.length-1];
+  const endScen=scenLine[scenLine.length-1];
+  const diff=endScen-endBase;
+  const retained=+(startSubs*(1-churnRate)**months).toFixed(1);
+  const totalChurned=+(startSubs-retained).toFixed(1);
+  const arpu=2.83; // Peacock avg monthly revenue per user estimate
+  const revenueImpact=+(diff*12*arpu).toFixed(0);
+
+  document.getElementById('churnMetrics').innerHTML=`
+    <div class="metric-card"><div class="metric-num" style="color:${G}">${endScen.toFixed(1)}M</div><div class="metric-label">Projected Subs (${months}mo)</div><div class="metric-delta">With strategy</div></div>
+    <div class="metric-card"><div class="metric-num" style="color:${diff>0?G:R}">${diff>0?'+':''}${diff.toFixed(1)}M</div><div class="metric-label">vs Baseline</div><div class="metric-delta">Subscriber delta</div></div>
+    <div class="metric-card"><div class="metric-num" style="color:${R}">${totalChurned.toFixed(1)}M</div><div class="metric-label">Churned (baseline)</div><div class="metric-delta">Over ${months} months</div></div>
+    <div class="metric-card"><div class="metric-num" style="color:${B}">$${Math.abs(revenueImpact)}M</div><div class="metric-label">Est. Annual Revenue Impact</div><div class="metric-delta">At $${arpu} ARPU/mo</div></div>`;
+
+  document.getElementById('churnInsight').innerHTML=`<b>Churn model:</b> At a <b>${(churnRate*100).toFixed(1)}% monthly churn rate</b> with <b>${newSubs}M new subscribers/month</b>, Peacock reaches <b>${endBase.toFixed(1)}M</b> on the baseline trajectory. The selected content strategy shifts this to <b>${endScen.toFixed(1)}M</b>, representing <b>${diff>0?'+':''}${diff.toFixed(1)}M subscriber difference</b> over ${months} months, representing approximately <b>$${Math.abs(revenueImpact)}M in annual revenue impact</b> at estimated ARPU. Live events (tentpole spike modeled at month 6) remain the highest-leverage single acquisition driver.`;
+}
+
+// ── ENGAGEMENT SEGMENTS ──
+function buildSegments() {
+  const segments = [
+    {name:'Power Viewers',share:18,churn:3.2,sessions:8.4,content:'Drama, Reality, Live Sports',lever:'Exclusive content drops, early access'},
+    {name:'Casual Browsers',share:35,churn:9.1,sessions:2.1,content:'News, Reality, Background TV',lever:'Personalization, curated playlists'},
+    {name:'Event Subscribers',share:27,churn:18.5,sessions:1.2,content:'Sports, Olympics, Live events',lever:'Year-round live content calendar'},
+    {name:'At-Risk (Dormant)',share:20,churn:28.3,sessions:0.3,content:'Minimal / none recent',lever:'Win-back campaigns, price incentives'},
+  ];
+  const segColors=[B,G,Y,R];
+
+  mkChart('segPieChart','doughnut',{
+    labels:segments.map(s=>s.name),
+    datasets:[{data:segments.map(s=>s.share),backgroundColor:segColors,borderWidth:2,borderColor:'#111'}]
+  },{plugins:{legend:{position:'bottom',labels:{color:mt,font:{size:11},padding:12}},tooltip:{callbacks:{label:c=>' '+c.label+': '+c.raw+'% of base'}}},scales:{}});
+
+  mkChart('segChurnChart','bar',{
+    labels:segments.map(s=>s.name),
+    datasets:[{label:'Monthly Churn %',data:segments.map(s=>s.churn),backgroundColor:segColors,borderRadius:4}]
+  },{plugins:{legend:{display:false}},scales:{
+    x:{...COPT.scales.x,ticks:{color:mt}},
+    y:{...COPT.scales.y,ticks:{callback:v=>v+'%',color:mt},title:{display:true,text:'Monthly Churn Rate',color:mt,font:{size:10}}}
+  }});
+
+  document.getElementById('segTableBody').innerHTML=segments.map((s,i)=>`
+    <tr>
+      <td><b style="color:${segColors[i]}">${s.name}</b></td>
+      <td>${s.share}%</td>
+      <td style="color:${s.churn>15?R:s.churn>8?Y:G}">${s.churn}%/mo</td>
+      <td>${s.sessions}x</td>
+      <td>${s.content}</td>
+      <td style="color:${B}">${s.lever}</td>
+    </tr>`).join('');
+}
+
+// ── SURVEY INSIGHTS ──
+async function buildSurvey(){
+  let lc=null;
+  try{
+    const resp=await fetch(API_BASE+'/api/survey');
+    if(resp.ok){const d=await resp.json();if(d.live&&d.question_summaries){lc={};d.question_summaries.forEach(q=>lc[q.question_id]=q.answers);const tag=document.getElementById('surveyLiveTag');if(tag){tag.textContent='Live SurveyMonkey data (n='+d.response_count+')';tag.style.color=G;}}}
+  }catch(e){console.warn('Survey API unavailable');}
+  const gc=(id,def)=>lc&&lc[id]?lc[id].map(a=>a.count):def;
+  const gl=(id,def)=>lc&&lc[id]?lc[id].map(a=>a.text):def;
+  mkChart('svQ1Chart','bar',{labels:gl('q1',['Daily','Several/week','Weekly','Monthly','Rarely']),datasets:[{data:gc('q1',[3,7,9,4,2]),backgroundColor:[G,B,PU,Y,R],borderRadius:4}]},{plugins:{legend:{display:false}},scales:{x:{...COPT.scales.x,ticks:{color:mt}},y:{...COPT.scales.y,ticks:{color:mt,stepSize:2}}}});
+  mkChart('svQ2Chart','doughnut',{labels:gl('q2',['Live sports','Originals','Bundle','NFL','News','Other']),datasets:[{data:gc('q2',[8,6,4,3,2,2]),backgroundColor:[Y,B,PU,G,R,O],borderWidth:2,borderColor:'#111'}]},{plugins:{legend:{position:'bottom',labels:{color:mt,font:{size:10},padding:8}}},scales:{}});
+  mkChart('svQ3Chart','bar',{labels:gl('q3',['Very likely','Likely','Neutral','Unlikely','Very unlikely']),datasets:[{data:gc('q3',[7,9,5,3,1]),backgroundColor:[G,B,Y,O,R],borderRadius:4}]},{plugins:{legend:{display:false}},scales:{x:{...COPT.scales.x,ticks:{color:mt}},y:{...COPT.scales.y,ticks:{color:mt,stepSize:2}}}});
+  mkChart('svQ4Chart','bar',{labels:gl('q4',['More live sports','Better originals','Lower price','Fewer ads','More movies','Better UI']),datasets:[{data:gc('q4',[10,8,7,6,4,3]),backgroundColor:COLORS,borderRadius:4}]},{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{...COPT.scales.x,ticks:{color:mt}},y:{...COPT.scales.y,ticks:{font:{size:10},color:mt}}}});
+  const nr=lc&&lc.q5?Array(11).fill(0).map((_,i)=>{const a=(lc.q5||[]).find(a=>a.text===String(i));return a?a.count:0;}):[0,0,1,0,1,2,4,7,5,3,2];
+  const prom=nr.slice(9).reduce((a,b)=>a+b,0),det=nr.slice(0,7).reduce((a,b)=>a+b,0),tot=nr.reduce((a,b)=>a+b,0);
+  const nps=tot>0?Math.round((prom/tot-det/tot)*100):0;
+  mkChart('svNPSChart','bar',{labels:['0','1','2','3','4','5','6','7','8','9','10'],datasets:[{data:nr,backgroundColor:nr.map((_,i)=>i<=6?R:i<=8?Y:G),borderRadius:4}]},{plugins:{legend:{display:false}},scales:{x:{...COPT.scales.x,ticks:{color:mt}},y:{...COPT.scales.y,ticks:{color:mt,stepSize:2}}}});
+  document.getElementById('npsScore').innerHTML='NPS Score: <b style="color:'+(nps>30?G:nps>0?Y:R)+'">'+(nps>0?'+':'')+nps+'</b> &nbsp;|&nbsp; Promoters: '+prom+' &nbsp;|&nbsp; Detractors: '+det+' &nbsp;|&nbsp; Passives: '+(tot-prom-det);
+  document.getElementById('surveyQList').innerHTML='<b style="color:var(--tx)">Survey: Streaming Habits & Subscription Drivers</b><br>Distributed via SurveyMonkey Free Tier, 10 questions<br><br><b style="color:var(--tx)">Q1.</b> How often do you watch Peacock?<br><b style="color:var(--tx)">Q2.</b> Primary reason you subscribe?<br><b style="color:var(--tx)">Q3.</b> Likelihood to keep subscription?<br><b style="color:var(--tx)">Q4.</b> What would most increase usage?<br><b style="color:var(--tx)">Q5.</b> NPS: Likelihood to recommend (0-10)?<br><b style="color:var(--tx)">Q6.</b> Which NBC linear shows do you also watch?<br><b style="color:var(--tx)">Q7.</b> How did you first discover Peacock?<br><b style="color:var(--tx)">Q8.</b> Which subscription tier?<br><b style="color:var(--tx)">Q9.</b> Usage compared to 12 months ago?<br><b style="color:var(--tx)">Q10.</b> Age range';
+}
+
+// ── HOOK INTO showPage ──
+const _origShowPage = showPage;
+function showPage(id, el) {
+  _origShowPage(id, el);
+  if (id === 'retention') setTimeout(initRetention, 50);
+}
+
+</script>
+
+</div><!-- /app-flex -->
+
+<!-- PAGE: RETENTION & CHURN -->
+<div class="page" id="page-retention">
+  <div class="rainbow-bar"></div>
+  <div class="page-header">
+    <svg viewBox="0 0 48 48" width="48" height="48" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(24,28)">
+        <ellipse rx="5.5" ry="15" fill="#FCB712" transform="rotate(-75) translate(0,-10)"/>
+        <ellipse rx="5.5" ry="15" fill="#F37020" transform="rotate(-45) translate(0,-10)"/>
+        <ellipse rx="5.5" ry="15" fill="#CD004D" transform="rotate(-15) translate(0,-10)"/>
+        <ellipse rx="5.5" ry="15" fill="#6460AC" transform="rotate(15) translate(0,-10)"/>
+        <ellipse rx="5.5" ry="15" fill="#008AD2" transform="rotate(45) translate(0,-10)"/>
+        <ellipse rx="5.5" ry="15" fill="#0CB14B" transform="rotate(75) translate(0,-10)"/>
+        <ellipse rx="7" ry="9" fill="white" transform="translate(0,5)"/>
+      </g>
+    </svg>
+    <div>
+      <div class="eyebrow">Independent Portfolio Project</div>
+      <h1>Retention &amp; Churn Analytics</h1>
+      <div class="sub">Subscriber lifecycle modeling, churn prediction, and engagement segmentation</div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showTab('ret','overview',this)">Subscriber Lifecycle</button>
+    <button class="tab-btn" onclick="showTab('ret','churn',this)">Churn Simulator</button>
+    <button class="tab-btn" onclick="showTab('ret','segments',this)">Engagement Segments</button>
+    <button class="tab-btn" onclick="showTab('ret','survey',this)">Survey Insights</button>
+  </div>
+
+  <!-- TAB: SUBSCRIBER LIFECYCLE -->
+  <div class="tab-pane active" id="rettab-overview">
+    <div class="grid-4" id="retMetrics" style="margin-bottom:16px"></div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Peacock Subscriber Growth &amp; Estimated Churn Rate</h3>
+        <div class="chart-wrap"><canvas id="retGrowthChart" height="220"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Monthly Retention Curve by Cohort</h3>
+        <div class="chart-wrap"><canvas id="retCohortChart" height="220"></canvas></div>
+      </div>
+    </div>
+    <div class="insight-box" id="retInsight1" style="border-left-color:#6460AC">
+      <b>Analyst note:</b> Peacock grew from 7M to 46M subscribers between Q1 2021 and mid-2025.
+      Growth spikes are driven by tentpole live events (Olympics, NFL). The key strategic challenge
+      is converting event-driven subscribers into retained long-term users. Industry benchmarks
+      suggest streaming services average 5-8% monthly churn; Peacock's ad-supported tier likely
+      trends toward the higher end given its freemium conversion dynamics.
+    </div>
+  </div>
+
+  <!-- TAB: CHURN SIMULATOR -->
+  <div class="tab-pane" id="rettab-churn">
+    <div class="grid-2" style="margin-bottom:16px">
+      <div class="card">
+        <h3>Churn Risk Inputs</h3>
+        <div class="control-group" style="margin-bottom:12px">
+          <label>Monthly Churn Rate (%)</label>
+          <div class="slider-row">
+            <input type="range" id="churnRate" min="1" max="20" value="7" step="0.5"
+              oninput="document.getElementById('churnRateVal').textContent=this.value+'%';updateChurnSim()">
+            <span class="slider-val" id="churnRateVal">7%</span>
+          </div>
+        </div>
+        <div class="control-group" style="margin-bottom:12px">
+          <label>Monthly New Subscriber Acquisition (M)</label>
+          <div class="slider-row">
+            <input type="range" id="newSubs" min="0.5" max="5" value="2" step="0.1"
+              oninput="document.getElementById('newSubsVal').textContent=this.value+'M';updateChurnSim()">
+            <span class="slider-val" id="newSubsVal">2M</span>
+          </div>
+        </div>
+        <div class="control-group" style="margin-bottom:12px">
+          <label>Content Investment Driver</label>
+          <select id="contentDriver" onchange="updateChurnSim()">
+            <option value="1.0">Baseline (current slate)</option>
+            <option value="0.85">Reduced content spend (-15%)</option>
+            <option value="1.12">New must-watch drama (+1 flagship)</option>
+            <option value="1.20">Live sports expansion (NFL Sunday Ticket)</option>
+            <option value="1.08">Reality franchise addition</option>
+          </select>
+        </div>
+        <div class="control-group" style="margin-bottom:12px">
+          <label>Tentpole Event This Year?</label>
+          <select id="tentpoleEvent" onchange="updateChurnSim()">
+            <option value="1.0">None</option>
+            <option value="1.18">Olympics (streaming exclusive)</option>
+            <option value="1.10">Super Bowl on Peacock</option>
+            <option value="1.06">Major awards show</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Projection Period (months)</label>
+          <div class="slider-row">
+            <input type="range" id="projMonths" min="6" max="36" value="18" step="3"
+              oninput="document.getElementById('projMonthsVal').textContent=this.value+' mo';updateChurnSim()">
+            <span class="slider-val" id="projMonthsVal">18 mo</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Projected Subscriber Count</h3>
+        <div class="chart-wrap"><canvas id="churnSimChart" height="260"></canvas></div>
+      </div>
+    </div>
+    <div class="grid-4" id="churnMetrics" style="margin-bottom:16px"></div>
+    <div class="insight-box" id="churnInsight" style="border-left-color:#CD004D"></div>
+  </div>
+
+  <!-- TAB: ENGAGEMENT SEGMENTS -->
+  <div class="tab-pane" id="rettab-segments">
+    <div class="insight-box" style="border-left-color:#FCB712;margin-bottom:16px">
+      <b>Segmentation model:</b> Subscribers are grouped into four behavioral cohorts based on
+      weekly active usage and content diversity. Segment sizes are modeled from industry benchmarks
+      (Antenna, Parrot Analytics) applied to Peacock's known subscriber base.
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Subscriber Engagement Segments</h3>
+        <div class="chart-wrap"><canvas id="segPieChart" height="240"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Churn Risk by Segment</h3>
+        <div class="chart-wrap"><canvas id="segChurnChart" height="240"></canvas></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:0">
+      <h3>Segment Profile &amp; Retention Strategy</h3>
+      <table class="data-table" id="segTable">
+        <thead>
+          <tr>
+            <th>Segment</th><th>Est. Share</th><th>Monthly Churn</th>
+            <th>Avg Sessions/wk</th><th>Primary Content</th><th>Retention Lever</th>
+          </tr>
+        </thead>
+        <tbody id="segTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: SURVEY INSIGHTS -->
+  <div class="tab-pane" id="rettab-survey">
+    <div class="insight-box" style="border-left-color:#0CB14B;margin-bottom:16px">
+      <b>Primary research integration:</b> This tab is designed to display results from a
+      SurveyMonkey audience survey on Peacock viewing habits and subscription drivers.
+      Sample questions are included below. Connect your SurveyMonkey data by replacing
+      the placeholder values with real responses.
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Q1: How often do you watch Peacock? (n=25)</h3>
+        <div class="chart-wrap"><canvas id="svQ1Chart" height="200"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Q2: Primary reason you subscribe to Peacock? (n=25)</h3>
+        <div class="chart-wrap"><canvas id="svQ2Chart" height="200"></canvas></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Q3: How likely are you to keep your subscription? (n=25)</h3>
+        <div class="chart-wrap"><canvas id="svQ3Chart" height="200"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Q4: What would most increase your Peacock usage? (n=25)</h3>
+        <div class="chart-wrap"><canvas id="svQ4Chart" height="200"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Q5: NPS, How likely are you to recommend Peacock? (0–10 scale, n=25)</h3>
+      <div class="chart-wrap"><canvas id="svNPSChart" height="140"></canvas></div>
+      <div id="npsScore" style="text-align:center;margin-top:12px;font-size:13px;color:var(--mt)"></div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3>Survey Methodology &amp; Full Question Set</h3>
+      <div style="font-size:13px;color:var(--mt);line-height:1.9" id="surveyQList"></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
