@@ -1141,7 +1141,7 @@ function runPrediction(){
   mkChart('factorChart','bar',{
     labels:fkeys,
     datasets:[{data:pcts,backgroundColor:pcts.map(v=>v>0?G:v<0?R:mt()),borderRadius:3}]
-  },{plugins:{legend:{display:false},scales:{x:{...COPT.scales.x},y:{...COPT.scales.y,ticks:{callback:v=>(v>0?'+':'')+v+'%',color:mt}});
+  },{plugins:{legend:{display:false}},scales:{x:{...COPT.scales.x},y:{...COPT.scales.y,ticks:{callback:v=>(v>0?'+':'')+v+'%',color:mt}}}});
 
   // Benchmark
   const similar=SHOWS.filter(s=>s.genre===genre&&s.year===2025);
@@ -1152,7 +1152,7 @@ function runPrediction(){
   mkChart('benchmarkChart','bar',{
     labels:benchLabels,
     datasets:[{data:benchData,backgroundColor:benchColors,borderRadius:3}]
-  },{plugins:{legend:{display:false},scales:{x:{...COPT.scales.x,ticks:{font:{size:10},color:mt},y:{...COPT.scales.y,ticks:{callback:v=>v+'M',color:mt}});
+  },{plugins:{legend:{display:false}},scales:{x:{...COPT.scales.x,ticks:{font:{size:10},color:mt}},y:{...COPT.scales.y,ticks:{callback:v=>v+'M',color:mt}}}});
 
   document.getElementById('predInsight').innerHTML=`<b>Analyst note:</b> A <b>${genre}</b> show on <b>${network}</b> in the <b>${timeslot}</b> slot for <b>${year}</b> projects at <b style="color:${B}">${result.adj}M viewers</b>. ${live=='1'?'Live content drives same-night ratings and reduces DVR skip.':''} ${network==='Peacock'?'Streaming-first distribution shows positive year-over-year trends but lower initial overnight numbers vs linear.':''}`;
 }
