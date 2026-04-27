@@ -41,4 +41,4 @@ This is an independent analytical portfolio project. It is not affiliated with, 
 - Mapped out system design in the docs.
 
 - More updated data, either integrated manually overtime or updated automatically via API. 
-- 
+  
