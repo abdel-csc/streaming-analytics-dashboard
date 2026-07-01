@@ -806,9 +806,9 @@ function mils(v){return v.toFixed(2)+'M'}
   },{
     plugins:{
       annotation:{annotations:{
-        covid:{type:'line',xMin:'2020-03',xMax:'2020-03',borderColor:C.Y+'99',borderWidth:1,borderDash:[4,3],label:{display:true,content:'COVID',color:C.Y,font:{size:9},position:'end'}},
-        tokyo:{type:'line',xMin:'2021-07',xMax:'2021-07',borderColor:C.Y+'99',borderWidth:1,borderDash:[4,3],label:{display:true,content:'Tokyo',color:C.Y,font:{size:9},position:'end'}},
-        paris:{type:'line',xMin:'2024-07',xMax:'2024-07',borderColor:C.Y+'99',borderWidth:1,borderDash:[4,3],label:{display:true,content:'Paris',color:C.Y,font:{size:9},position:'end'}}
+        covid:{type:'line',xMin:'2020-03',xMax:'2020-03',borderColor:C.Y+'99',borderWidth:1.5,borderDash:[4,3],label:{display:true,content:'COVID-19',color:C.Y,font:{size:9},position:'start',yAdjust:-10}},
+        tokyo:{type:'line',xMin:'2021-07',xMax:'2021-07',borderColor:C.Y+'99',borderWidth:1.5,borderDash:[4,3],label:{display:true,content:'Tokyo Olympics',color:C.Y,font:{size:9},position:'start',yAdjust:-10}},
+        paris:{type:'line',xMin:'2024-07',xMax:'2024-07',borderColor:C.Y+'99',borderWidth:1.5,borderDash:[4,3],label:{display:true,content:'Paris Olympics',color:C.Y,font:{size:9},position:'start',yAdjust:-10}}
       }}
     },
     scales:{x:{ticks:{maxTicksLimit:12}},y:{ticks:{callback:v=>v+'%'}}}
